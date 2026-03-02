@@ -54,7 +54,8 @@ app.use(express.static("public"));
 // Route handler for the root endpoint
 app.get("/", (req: Request, res: Response) => {
   res.send({
-    message: "How's Project API",
+    message:
+      "Welcome to the Wasiq API! Please refer to the documentation for available endpoints.",
   });
 });
 
