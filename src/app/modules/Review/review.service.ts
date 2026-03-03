@@ -72,6 +72,27 @@ const createTripServiceReview = async (
   return review;
 };
 
+// get all reviews
+const getAllReviews = async () => {
+  const reviews = await prisma.review.findMany({
+    select: {
+      id: true,
+      userId: true,
+      tripServiceId: true,
+      rating: true,
+      comment: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  return reviews;
+};
+
 export const ReviewService = {
   createTripServiceReview,
+  getAllReviews,
 };
