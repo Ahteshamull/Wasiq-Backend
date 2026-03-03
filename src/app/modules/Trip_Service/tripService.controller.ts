@@ -363,7 +363,7 @@ const getPrivateTransferPopularTripServices = catchAsync(
       success: true,
       message:
         "PRIVATE_TRANSFER and isPopular Trip services retrieved successfully",
-      data: result,
+      data: result.data,
     });
   },
 );
