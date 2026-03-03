@@ -5,14 +5,14 @@ import { UserRole } from "@prisma/client";
 
 const router = express.Router();
 
-// create trip service review
+//localhost:5000/api/v1/review/service
 router.post(
   "/service",
   auth(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.USER, UserRole.AGENT),
   ReviewController.createTripServiceReview,
 );
 
-// get all reviews
+//localhost:5000/api/v1/review/service-all-reviews get all reviews
 
 router.get(
   "/service-all-reviews",
