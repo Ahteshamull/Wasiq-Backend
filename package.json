@@ -10,7 +10,7 @@
     "postinstall": "prisma generate"
   },
   "keywords": [],
-  "author": "Raju_Ahmmed",
+  "author": "Hasan",
   "license": "ISC",
   "description": "",
   "devDependencies": {
@@ -34,7 +34,6 @@
     "typescript": "^5.5.3"
   },
   "dependencies": {
-    "-": "^0.0.1",
     "@aws-sdk/client-s3": "^3.705.0",
     "@prisma/client": "^5.21.1",
     "@types/jsonwebtoken": "^9.0.6",
