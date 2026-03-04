@@ -776,8 +776,6 @@ const getPrivateTransferTripServices = async (
 const getPrivateTransferPopularTripServices = async (
   options: IPaginationOptions,
 ): Promise<IGenericResponse<TripService[]>> => {
-  const { page, limit, skip } = paginationHelpers.calculatedPagination(options);
-
   const filters: Prisma.TripServiceWhereInput[] = [];
 
   filters.push({
@@ -792,8 +790,6 @@ const getPrivateTransferPopularTripServices = async (
 
   const result = await prisma.tripService.findMany({
     where,
-    skip,
-    take: limit,
     orderBy:
       options.sortBy && options.sortOrder
         ? { [options.sortBy]: options.sortOrder }
@@ -816,8 +812,8 @@ const getPrivateTransferPopularTripServices = async (
   return {
     meta: {
       total,
-      page,
-      limit,
+      page: 1,
+      limit: total,
     },
     data: result,
   };
