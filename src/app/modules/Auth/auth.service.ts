@@ -62,7 +62,7 @@ const loginUser = async (payload: ILoginRequest): Promise<ILoginResponse> => {
       role: userData.role,
     },
     config.jwt.jwt_secret as Secret,
-    config.jwt.expires_in as string
+    config.jwt.expires_in as string,
   );
 
   const refreshToken = jwtHelpers.generateToken(
@@ -72,7 +72,7 @@ const loginUser = async (payload: ILoginRequest): Promise<ILoginResponse> => {
       role: userData.role,
     },
     config.jwt.refresh_token_secret as Secret,
-    config.jwt.refresh_token_expires_in as string
+    config.jwt.refresh_token_expires_in as string,
   );
 
   const result = {
@@ -121,7 +121,7 @@ const socialLogin = async (payload: any) => {
         data: { fcmToken },
       });
     } catch (error) {
-      console.error("Failed to update FCM token:", error);
+   //
     }
   }
 
@@ -133,7 +133,7 @@ const socialLogin = async (payload: any) => {
       role: user.role,
     },
     config.jwt.jwt_secret as Secret,
-    config.jwt.expires_in as string
+    config.jwt.expires_in as string,
   );
 
   // refresh Token Generate
@@ -144,7 +144,7 @@ const socialLogin = async (payload: any) => {
       role: user.role,
     },
     config.jwt.refresh_token_secret as Secret,
-    config.jwt.refresh_token_expires_in as string
+    config.jwt.refresh_token_expires_in as string,
   );
 
   return {
@@ -169,7 +169,7 @@ const loginWebsite = async (payload: ISignupRequest) => {
   if (existingUser) {
     throw new ApiError(
       httpStatus.CONFLICT,
-      "User already exists with this email"
+      "User already exists with this email",
     );
   }
 
@@ -201,7 +201,7 @@ const loginWebsite = async (payload: ISignupRequest) => {
       role: newUser.role,
     },
     config.jwt.jwt_secret as Secret,
-    config.jwt.expires_in as string
+    config.jwt.expires_in as string,
   );
 
   const refreshToken = jwtHelpers.generateToken(
@@ -211,7 +211,7 @@ const loginWebsite = async (payload: ISignupRequest) => {
       role: newUser.role,
     },
     config.jwt.refresh_token_secret as Secret,
-    config.jwt.refresh_token_expires_in as string
+    config.jwt.refresh_token_expires_in as string,
   );
 
   const result: ISignupResponse = {
@@ -239,7 +239,7 @@ const refreshToken = async (token: string) => {
   try {
     decodedData = jwtHelpers.verifyToken(
       token,
-      config.jwt.refresh_token_secret as string
+      config.jwt.refresh_token_secret as string,
     ) as JwtPayload;
   } catch (err) {
     throw new ApiError(httpStatus.UNAUTHORIZED, "Your not authorized");
@@ -258,7 +258,7 @@ const refreshToken = async (token: string) => {
   const newAccessToken = jwtHelpers.generateToken(
     { id: isUserExist.id, email: isUserExist.email, role: isUserExist.role },
     config.jwt.jwt_secret as Secret,
-    config.jwt.expires_in as string
+    config.jwt.expires_in as string,
   );
 
   return {
@@ -270,7 +270,7 @@ const refreshToken = async (token: string) => {
 const changePassword = async (
   userId: string,
   oldPassword: string,
-  newPassword: string
+  newPassword: string,
 ) => {
   const userData = await prisma.user.findUnique({
     where: {
@@ -288,7 +288,7 @@ const changePassword = async (
 
   const isPasswordMatch: boolean = await bcrypt.compare(
     oldPassword,
-    userData.password
+    userData.password,
   );
   if (!isPasswordMatch) {
     throw new ApiError(httpStatus.UNAUTHORIZED, "Password is incorrect");
@@ -393,24 +393,15 @@ const verifyOtp = async (otp: string) => {
     throw new ApiError(400, "Your otp has been expired");
   }
 
-  const accessToken = jwtHelpers.generateToken(
+  const resetToken = jwtHelpers.generateToken(
     {
       id: userData.id,
       email: userData.email,
       role: userData.role,
+      purpose: "reset_password",
     },
     config.jwt.reset_pass_secret as Secret,
-    config.jwt.reset_pass_token_expires_in as string
-  );
-
-  const refreshToken = jwtHelpers.generateToken(
-    {
-      id: userData.id,
-      email: userData.email,
-      role: userData.role,
-    },
-    config.jwt.refresh_token_secret as Secret,
-    config.jwt.refresh_token_expires_in as string
+    config.jwt.reset_pass_token_expires_in as string,
   );
 
   await prisma.user.update({
@@ -425,8 +416,7 @@ const verifyOtp = async (otp: string) => {
   });
 
   const result = {
-    accessToken,
-    refreshToken,
+    resetToken,
   };
 
   return result;
@@ -436,9 +426,11 @@ const verifyOtp = async (otp: string) => {
 const resetPassword = async (
   token: string,
   // userId: string,
-  payload: { password: string; confirmPassword: string }
+  payload: { password: string; confirmPassword: string },
 ) => {
   const { password, confirmPassword } = payload;
+
+  const jwtToken = token?.startsWith("Bearer ") ? token.split(" ")[1] : token;
 
   // check if passwords match
   if (password !== confirmPassword) {
@@ -449,11 +441,15 @@ const resetPassword = async (
   let decodedToken;
   try {
     decodedToken = jwtHelpers.verifyToken(
-      token,
-      config.jwt.reset_pass_secret as Secret
+      jwtToken,
+      config.jwt.reset_pass_secret as Secret,
     );
   } catch (error) {
     throw new ApiError(httpStatus.FORBIDDEN, "Invalid or expired token");
+  }
+
+  if (decodedToken?.purpose !== "reset_password") {
+    throw new ApiError(httpStatus.FORBIDDEN, "Invalid reset token");
   }
 
   // find user by decoded token id
