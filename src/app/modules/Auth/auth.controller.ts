@@ -110,7 +110,7 @@ const changePassword = catchAsync(async (req: Request, res: Response) => {
   const result = await AuthServices.changePassword(
     userId,
     oldPassword,
-    newPassword
+    newPassword,
   );
 
   sendResponse(res, {
@@ -138,7 +138,7 @@ const verifyOtp = catchAsync(async (req: Request, res: Response) => {
   const { otp } = req.body;
   const result = await AuthServices.verifyOtp(otp);
 
-  res.cookie("token", result.accessToken, {
+  res.cookie("resetToken", result.resetToken, {
     secure: config.env === "production",
     httpOnly: true,
     sameSite: "none",
@@ -155,7 +155,8 @@ const verifyOtp = catchAsync(async (req: Request, res: Response) => {
 
 // reset password
 const resetPassword = catchAsync(async (req: Request, res: Response) => {
-  const token = req.headers.authorization || "";
+  const token =
+    req.headers.authorization || (req as any).cookies?.resetToken || "";
   // const userId = req.user?.id;
   // console.log(token);
 
