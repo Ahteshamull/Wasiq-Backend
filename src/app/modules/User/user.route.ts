@@ -102,7 +102,7 @@ router.patch(
 
 // delete user
 router.delete(
-  "/:id",
+  "/delete-user/:id",
   auth(UserRole.SUPER_ADMIN, UserRole.ADMIN),
   UserController.deleteUser,
 );

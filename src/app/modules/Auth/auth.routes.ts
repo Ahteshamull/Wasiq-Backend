@@ -23,7 +23,7 @@ router.post("/refresh-token", AuthController.refreshToken);
 router.post(
   "/logout",
   auth(UserRole.USER, UserRole.AGENT, UserRole.ADMIN, UserRole.SUPER_ADMIN),
-  AuthController.logoutUser
+  AuthController.logoutUser,
 );
 
 //change password
@@ -31,7 +31,7 @@ router.put(
   "/change-password",
   auth(UserRole.USER, UserRole.AGENT, UserRole.ADMIN, UserRole.SUPER_ADMIN),
   validateRequest(authValidation.changePasswordValidationSchema),
-  AuthController.changePassword
+  AuthController.changePassword,
 );
 
 // forgot password
@@ -45,7 +45,16 @@ router.post(
   "/reset-password",
   // auth(UserRole.SUPER_ADMIN, UserRole.ADMIN),
   validateRequest(authValidation.resetPasswordSchema),
-  AuthController.resetPassword
+  AuthController.resetPassword,
 );
+
+// delete user
+router.delete(
+  "/delete-user/:id",
+  auth(UserRole.USER, UserRole.AGENT, UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  AuthController.deleteUser,
+);
+
+
 
 export const authRoutes = router;

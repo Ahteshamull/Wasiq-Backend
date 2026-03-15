@@ -170,6 +170,23 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// delete user
+const deleteUser = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+  const result = await AuthServices.deleteUser(userId);
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "User deleted successfully",
+    data: result,
+  });
+});
+
 export const AuthController = {
   loginUser,
   socialLogin,
@@ -180,4 +197,5 @@ export const AuthController = {
   forgotPassword,
   verifyOtp,
   resetPassword,
+  deleteUser,
 };

@@ -804,16 +804,84 @@ const deleteUser = async (
   // Check if user exists
   const existingUser = await prisma.user.findUnique({
     where: { id: userId },
+    include: {
+      tripServices: true,
+      triServiceBookings: true,
+    },
   });
 
   if (!existingUser) {
     throw new ApiError(404, "User not found");
   }
 
-  // Delete the user
-  await prisma.user.delete({
-    where: { id: userId },
-  });
+  const tripServiceIds = existingUser.tripServices.map((ts) => ts.id);
+  const bookingIds = existingUser.triServiceBookings.map((b) => b.id);
+
+  await prisma.$transaction(
+    async (tx) => {
+      // 1. Delete all dependencies of user's bookings
+      if (bookingIds.length > 0) {
+        await tx.bookingStoppage.deleteMany({ where: { bookingId: { in: bookingIds } } });
+        await tx.bookingVehicle.deleteMany({ where: { bookingId: { in: bookingIds } } });
+        await tx.payment.deleteMany({ where: { tripServiceBookingId: { in: bookingIds } } });
+        await tx.notifications.deleteMany({ where: { bookingId: { in: bookingIds } } });
+        await tx.tripServiceBooking.deleteMany({ where: { id: { in: bookingIds } } });
+      }
+
+      // 2. Delete all dependencies of user's TripServices (if they are an agent)
+      if (tripServiceIds.length > 0) {
+        // Find all bookings for these trip services
+        const relatedBookings = await tx.tripServiceBooking.findMany({
+          where: { tripServiceId: { in: tripServiceIds } },
+          select: { id: true },
+        });
+        const relatedBookingIds = relatedBookings.map((b) => b.id);
+
+        if (relatedBookingIds.length > 0) {
+          await tx.bookingStoppage.deleteMany({ where: { bookingId: { in: relatedBookingIds } } });
+          await tx.bookingVehicle.deleteMany({ where: { bookingId: { in: relatedBookingIds } } });
+          await tx.payment.deleteMany({ where: { tripServiceBookingId: { in: relatedBookingIds } } });
+          await tx.notifications.deleteMany({ where: { bookingId: { in: relatedBookingIds } } });
+          await tx.tripServiceBooking.deleteMany({ where: { id: { in: relatedBookingIds } } });
+        }
+
+        await tx.tripServiceStoppage.deleteMany({ where: { tripServiceId: { in: tripServiceIds } } });
+        await tx.vehicle.deleteMany({ where: { tripServiceId: { in: tripServiceIds } } });
+        await tx.review.deleteMany({ where: { tripServiceId: { in: tripServiceIds } } });
+        await tx.tripService.deleteMany({ where: { id: { in: tripServiceIds } } });
+      }
+
+      // 3. Delete direct user activities
+      await tx.payment.deleteMany({ where: { userId } });
+      await tx.notifications.deleteMany({ where: { OR: [{ receiverId: userId }, { partnerId: userId }] } });
+      await tx.review.deleteMany({ where: { userId } });
+      await tx.favorite.deleteMany({ where: { userId } });
+
+      // Handle messages and channels
+      const channels = await tx.channel.findMany({
+        where: { OR: [{ person1Id: userId }, { person2Id: userId }] },
+        select: { channelName: true, id: true },
+      });
+      
+      // Also delete any isolated messages sent by user
+      await tx.message.deleteMany({ where: { senderId: userId } });
+      
+      if (channels.length > 0) {
+        const channelNames = channels.map((c) => c.channelName);
+        await tx.message.deleteMany({ where: { channelName: { in: channelNames } } });
+        await tx.channel.deleteMany({ where: { id: { in: channels.map((c) => c.id) } } });
+      }
+
+      await tx.support.deleteMany({ where: { OR: [{ userId }, { reportedUserId: userId }] } });
+
+      // Finally delete the user
+      await tx.user.delete({ where: { id: userId } });
+    },
+    {
+      maxWait: 5000,
+      timeout: 10000,
+    }
+  );
 
   return;
 };
