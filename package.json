@@ -1,11 +1,11 @@
 {
-  "name": "timothy-backend",
+  "name": "wasik-backend",
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
     "start": "node ./dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "build": "npm install && tsc",
+    "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1",
     "postinstall": "prisma generate"
   },
