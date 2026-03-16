@@ -23,6 +23,13 @@ router.get(
   UserController.getAllAgents,
 );
 
+// get all active agents
+router.get(
+  "/all-admins",
+  auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  UserController.getAllAdmins,
+);
+
 // get all inactive agents
 router.get(
   "/inactive-agents",

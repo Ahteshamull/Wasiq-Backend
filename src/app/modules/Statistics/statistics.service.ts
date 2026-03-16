@@ -674,7 +674,7 @@ const getAdminTotalEarnings = async (options: IPaginationOptions) => {
       },
     },
     _sum: {
-      agent_commission: true,
+      admin_commission: true,
     },
   });
 
@@ -697,8 +697,8 @@ const getAdminTotalEarnings = async (options: IPaginationOptions) => {
   });
 
   const averageEarnings =
-    totalConfirmCompletedBooking > 0 && totalPayments._sum.agent_commission
-      ? totalPayments._sum.agent_commission / totalConfirmCompletedBooking
+    totalConfirmCompletedBooking > 0 && totalPayments._sum.admin_commission
+      ? totalPayments._sum.admin_commission / totalConfirmCompletedBooking
       : 0;
 
   // total payment database info
@@ -724,7 +724,7 @@ const getAdminTotalEarnings = async (options: IPaginationOptions) => {
   });
 
   return {
-    totalPayments: totalPayments._sum.agent_commission || 0,
+    totalPayments: totalPayments._sum.admin_commission || 0,
     completedRides,
     averageEarnings,
     meta: {
