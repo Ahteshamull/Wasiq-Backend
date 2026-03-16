@@ -6,8 +6,8 @@ const generateToken = (
   expiresIn: string,
 ): string => {
   const token = jwt.sign(payload, secret, {
-    expiresIn,
-  });
+    expiresIn: expiresIn,
+  } as any);
 
   return token;
 };
