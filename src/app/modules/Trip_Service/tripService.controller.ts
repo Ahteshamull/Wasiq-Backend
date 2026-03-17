@@ -93,7 +93,8 @@ const getByTheHourTripServices = catchAsync(
       statusCode: httpStatus.OK,
       success: true,
       message: "BY_THE_HOUR Trip services retrieved successfully",
-      data: result,
+      data: result.data,
+      meta: result.meta,
     });
   },
 );
@@ -109,7 +110,8 @@ const getByTheHourPopularTripServices = catchAsync(
       statusCode: httpStatus.OK,
       success: true,
       message: "BY_THE_HOUR and isPopular Trip services retrieved successfully",
-      data: result,
+      data: result.data,
+      meta: result.meta,
     });
   },
 );
@@ -178,7 +180,8 @@ const getDayTripTripServices = catchAsync(
       statusCode: httpStatus.OK,
       success: true,
       message: "BY_THE_DAY Trip services retrieved successfully",
-      data: result,
+      data: result.data,
+      meta: result.meta,
     });
   },
 );
@@ -194,7 +197,8 @@ const getDayTripPopularTripServices = catchAsync(
       statusCode: httpStatus.OK,
       success: true,
       message: "BY_THE_DAY and isPopular Trip services retrieved successfully",
-      data: result,
+      data: result.data,
+      meta: result.meta,
     });
   },
 );
@@ -213,7 +217,8 @@ const getDayTripTripServicesByFromLocationGroup = catchAsync(
       success: true,
       message:
         "DAY_TRIP Trip services retrieved successfully by from location group",
-      data: result,
+      data: result.data,
+      meta: result.meta,
     });
   },
 );
@@ -286,7 +291,8 @@ const getMultiDayTourTripServices = catchAsync(
       statusCode: httpStatus.OK,
       success: true,
       message: "MULTI_DAY_TOUR Trip services retrieved successfully",
-      data: result,
+      data: result.data,
+      meta: result.meta,
     });
   },
 );
@@ -303,7 +309,8 @@ const getMultiDayTourPopularTripServices = catchAsync(
       success: true,
       message:
         "MULTI_DAY_TOUR and isPopular Trip services retrieved successfully",
-      data: result,
+      data: result.data,
+      meta: result.meta,
     });
   },
 );
@@ -322,7 +329,8 @@ const getMultiDayTourTripServicesByTourDaysGroup = catchAsync(
       success: true,
       message:
         "MULTI_DAY_TOUR Trip services retrieved successfully by tour days group",
-      data: result,
+      data: result.data,
+      meta: result.meta,
     });
   },
 );
@@ -346,7 +354,8 @@ const getPrivateTransferTripServices = catchAsync(
       statusCode: httpStatus.OK,
       success: true,
       message: "PRIVATE_TRANSFER Trip services retrieved successfully",
-      data: result,
+      data: result.data,
+      meta: result.meta,
     });
   },
 );
@@ -364,6 +373,7 @@ const getPrivateTransferPopularTripServices = catchAsync(
       message:
         "PRIVATE_TRANSFER and isPopular Trip services retrieved successfully",
       data: result.data,
+      meta: result.meta,
     });
   },
 );
@@ -382,7 +392,8 @@ const getPrivateTransferTripServicesByFromLocationGroup = catchAsync(
       success: true,
       message:
         "PRIVATE_TRANSFER Trip services retrieved successfully by from location group",
-      data: result,
+      data: result.data,
+      meta: result.meta,
     });
   },
 );
@@ -400,7 +411,8 @@ const getAirportTransferTripServices = catchAsync(
       statusCode: httpStatus.OK,
       success: true,
       message: "AIRPORT_TRANSFER Trip services retrieved successfully",
-      data: result,
+      data: result.data,
+      meta: result.meta,
     });
   },
 );
@@ -417,7 +429,8 @@ const getAirportTransferPopularTripServices = catchAsync(
       success: true,
       message:
         "AIRPORT_TRANSFER and isPopular Trip services retrieved successfully",
-      data: result,
+      data: result.data,
+      meta: result.meta,
     });
   },
 );
