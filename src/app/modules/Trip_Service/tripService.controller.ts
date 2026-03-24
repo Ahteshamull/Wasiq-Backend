@@ -235,7 +235,7 @@ const createMultiDayTourTripService = catchAsync(
     const userId = req.user?.id;
     const tripServiceData = req.body;
 
- 
+
     if (
       !tripServiceData.title ||
       typeof tripServiceData.title !== "string" ||
@@ -252,7 +252,6 @@ const createMultiDayTourTripService = catchAsync(
       });
     }
 
-    // check if images are provided
     if (!files?.image || files.image.length === 0) {
       return sendResponse(res, {
         statusCode: httpStatus.BAD_REQUEST,
