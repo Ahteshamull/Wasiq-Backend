@@ -159,6 +159,7 @@ model TripService {
   to                String?
   toLat             Float?
   toLng             Float?
+  title             String?
   price             Float?
   travelTimeMinutes Int?
   distanceKm        Float?

@@ -175,6 +175,7 @@ const createDayTripServiceValidationSchema = z.object({
 // create multi day tour trip service validation schema
 const createMultiDayTourTripServiceValidationSchema = z.object({
   body: z.object({
+    title: z.string().min(1, "Title is required"),
     from: z.string().optional(),
     fromLat: z
       .string()

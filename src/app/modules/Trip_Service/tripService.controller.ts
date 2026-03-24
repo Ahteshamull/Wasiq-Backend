@@ -235,6 +235,23 @@ const createMultiDayTourTripService = catchAsync(
     const userId = req.user?.id;
     const tripServiceData = req.body;
 
+ 
+    if (
+      !tripServiceData.title ||
+      typeof tripServiceData.title !== "string" ||
+      tripServiceData.title.trim() === ""
+    ) {
+      return sendResponse(res, {
+        statusCode: httpStatus.BAD_REQUEST,
+        success: false,
+        message: "Title is required",
+        data: {
+          field: "title",
+          error: "Title field is required",
+        },
+      });
+    }
+
     // check if images are provided
     if (!files?.image || files.image.length === 0) {
       return sendResponse(res, {

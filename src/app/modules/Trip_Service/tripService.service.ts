@@ -448,6 +448,7 @@ const createMultiDayTourTripService = async (
     },
     select: {
       id: true,
+      title: true,
       serviceType: true,
       groupType: true,
       images: true,
@@ -598,6 +599,7 @@ const getMultiDayTourTripServicesByTourDaysGroup = async (
         : { bookingCount: "desc" },
     select: {
       id: true,
+      title: true,
       serviceType: true,
       groupType: true,
       images: true,
