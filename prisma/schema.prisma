@@ -49,6 +49,11 @@ enum ServiceStatus {
   INACTIVE
 }
 
+enum ReviewStatus {
+  ACTIVE
+  INACTIVE
+}
+
 enum PaymentStatus {
   PAID
   UNPAID
@@ -328,6 +333,7 @@ model Review {
   rating     Float
   subRatings Json?
   comment    String?
+  status     ReviewStatus @default(INACTIVE)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

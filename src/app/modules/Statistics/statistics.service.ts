@@ -765,6 +765,13 @@ const getAdminTotalBookings = async (options: IPaginationOptions) => {
         in: [BookingStatus.CONFIRMED, BookingStatus.COMPLETED],
       },
     },
+    include: {
+      user: {
+        select: {
+          email: true,
+        },
+      },
+    },
     skip,
     take: limit,
     orderBy: {

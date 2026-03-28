@@ -20,4 +20,13 @@ router.get(
   ReviewController.getAllReviews,
 );
 
+// update review status
+router.patch(
+  "/:id/status",
+  auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  ReviewController.updateReviewStatus,
+);
+
+//get all active reviews
+
 export const reviewRoute = router;

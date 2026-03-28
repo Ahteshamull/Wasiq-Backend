@@ -3,6 +3,7 @@ import catchAsync from "../../../shared/catchAsync";
 import { ReviewService } from "./review.service";
 import sendResponse from "../../../shared/sendResponse";
 import httpStatus from "http-status";
+import { ReviewStatus } from "@prisma/client";
 
 // create trip service review
 const createTripServiceReview = catchAsync(
@@ -37,7 +38,24 @@ const getAllReviews = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const updateReviewStatus = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { status } = req.body; // boolean true/false
+
+  const reviewStatus = status ? ReviewStatus.ACTIVE : ReviewStatus.INACTIVE;
+
+  const result = await ReviewService.updateReviewStatus(id, reviewStatus);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Review status updated successfully",
+    data: result,
+  });
+});
+
 export const ReviewController = {
   createTripServiceReview,
   getAllReviews,
+  updateReviewStatus,
 };

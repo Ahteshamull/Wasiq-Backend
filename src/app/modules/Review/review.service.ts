@@ -1,4 +1,5 @@
 import prisma from "../../../shared/prisma";
+import { ReviewStatus } from "@prisma/client";
 import ApiError from "../../../errors/ApiErrors";
 import httpStatus from "http-status";
 
@@ -43,6 +44,7 @@ const createTripServiceReview = async (
       tripServiceId: true,
       rating: true,
       comment: true,
+      status: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -81,6 +83,7 @@ const getAllReviews = async () => {
       tripServiceId: true,
       rating: true,
       comment: true,
+      status: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -92,7 +95,35 @@ const getAllReviews = async () => {
   return reviews;
 };
 
+// update review status
+const updateReviewStatus = async (reviewId: string, status: ReviewStatus) => {
+  const review = await prisma.review.findUnique({
+    where: { id: reviewId },
+  });
+  if (!review) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Review not found");
+  }
+
+  const result = await prisma.review.update({
+    where: { id: reviewId },
+    data: { status },
+    select: {
+      id: true,
+      userId: true,
+      tripServiceId: true,
+      rating: true,
+      comment: true,
+      status: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  return result;
+};
+
 export const ReviewService = {
   createTripServiceReview,
   getAllReviews,
+  updateReviewStatus,
 };
