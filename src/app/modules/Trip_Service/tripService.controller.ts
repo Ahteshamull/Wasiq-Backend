@@ -170,6 +170,74 @@ const createDayTripService = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+//create Explore service
+const createExploreService = catchAsync(async (req: Request, res: Response) => {
+  const files = req.files as {
+    [fieldname: string]: Express.Multer.File[];
+  };
+
+  const userId = req.user?.id;
+  const tripServiceData = req.body;
+
+  // check if images are provided
+  if (!files?.image || files.image.length === 0) {
+    return sendResponse(res, {
+      statusCode: httpStatus.BAD_REQUEST,
+      success: false,
+      message: "Images are required",
+      data: null,
+    });
+  }
+
+  // handle image uploads
+  let imageUrls: string[] = [];
+  if (files?.image && files.image.length > 0) {
+    const uploadPromises = files.image.map((file) =>
+      uploadFile.uploadToCloudinary(file),
+    );
+    const uploadResults = await Promise.all(uploadPromises);
+    imageUrls = uploadResults
+      .filter(
+        (result): result is NonNullable<typeof result> => result !== undefined,
+      )
+      .map((result) => result.secure_url);
+  }
+
+  // image with tripServiceData
+  const finalTripServiceData = {
+    ...tripServiceData,
+    images: imageUrls.length > 0 ? imageUrls : [],
+  };
+
+  const result = await TripServiceService.createExploreService(
+    userId,
+    finalTripServiceData,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: "Explore service created successfully",
+    data: result,
+  });
+});
+
+//get explore service
+const getExploreService = catchAsync(async (req: Request, res: Response) => {
+  const options = pick(req.query, paginationFields);
+  const location = req.query.location as string | undefined;
+
+  const result = await TripServiceService.getExploreService(options, location);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Explore services retrieved successfully",
+    data: result.data,
+    meta: result.meta,
+  });
+});
+
 // get all trip services BY_THE_DAY
 const getDayTripTripServices = catchAsync(
   async (req: Request, res: Response) => {
@@ -234,7 +302,6 @@ const createMultiDayTourTripService = catchAsync(
 
     const userId = req.user?.id;
     const tripServiceData = req.body;
-
 
     if (
       !tripServiceData.title ||
@@ -520,6 +587,29 @@ const deleteTripService = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// get modal specific data by location
+const getTripsByLocationForModal = catchAsync(
+  async (req: Request, res: Response) => {
+    const options = pick(req.query, paginationFields);
+    const location = req.query.location as string | undefined;
+    const serviceType = req.query.serviceType as any;
+
+    const result = await TripServiceService.getTripsByLocationForModal(
+      options,
+      location,
+      serviceType,
+    );
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Trip services for modal retrieved successfully",
+      data: result.data,
+      meta: result.meta,
+    });
+  },
+);
+
 export const TripServiceController = {
   createTripService,
   getAllTripServices,
@@ -552,4 +642,11 @@ export const TripServiceController = {
   getSingleTripService,
   updateTripService,
   deleteTripService,
+
+  // explore
+  createExploreService,
+  getExploreService,
+
+  // modal
+  getTripsByLocationForModal,
 };

@@ -172,6 +172,29 @@ const createDayTripServiceValidationSchema = z.object({
   }),
 });
 
+// create explore service validation schema
+const createExploreServiceValidationSchema = z.object({
+  body: z.object({
+    title: z.string().min(1, "Title is required"),
+    description: z.string().min(1, "Description is required"),
+    location: z.string().min(1, "Location is required"),
+    price: z
+      .string()
+      .optional()
+      .transform((val) => (val ? parseFloat(val) : undefined))
+      .refine((val) => !val || val > 0, "Price must be a positive number"),
+    time: z
+      .string()
+      .optional()
+      .transform((val) => (val ? parseInt(val) : undefined))
+      .refine(
+        (val) => !val || val > 0,
+        "Time must be a positive integer",
+      ),
+    groupType: z.string().optional(),
+  }),
+});
+
 // create multi day tour trip service validation schema
 const createMultiDayTourTripServiceValidationSchema = z.object({
   body: z.object({
@@ -354,4 +377,5 @@ export const TripServiceValidation = {
   createDayTripServiceValidationSchema,
   createMultiDayTourTripServiceValidationSchema,
   updateTripServiceValidationSchema,
+  createExploreServiceValidationSchema,
 };

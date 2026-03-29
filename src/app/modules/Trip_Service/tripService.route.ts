@@ -22,6 +22,21 @@ router.post(
 // get all trip services
 router.get("/", TripServiceController.getAllTripServices);
 
+// ----------------- explore -----------------
+
+// create explore service
+router.post(
+  "/explore",
+  auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  uploadFile.upload.fields([{ name: "image", maxCount: 40 }]),
+  parseBodyData,
+  validateRequest(TripServiceValidation.createExploreServiceValidationSchema),
+  TripServiceController.createExploreService,
+);
+
+// get all trip services EXPLORE  ?location=sligo
+router.get("/all/explore", TripServiceController.getExploreService);
+
 // ----------------- by the hour -----------------
 
 // get all trip services BY_THE_HOUR
