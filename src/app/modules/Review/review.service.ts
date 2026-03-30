@@ -80,6 +80,15 @@ const getAllReviews = async () => {
     select: {
       id: true,
       userId: true,
+      user: {
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          profileImage: true,
+          contactNumber: true,
+        },
+      },
       tripServiceId: true,
       rating: true,
       comment: true,
