@@ -319,6 +319,18 @@ const createMultiDayTourTripService = catchAsync(
       });
     }
 
+    if (!tripServiceData.price || isNaN(Number(tripServiceData.price))) {
+      return sendResponse(res, {
+        statusCode: httpStatus.BAD_REQUEST,
+        success: false,
+        message: "Price is required and must be a number",
+        data: {
+          field: "price",
+          error: "Price field is required and must be a valid number",
+        },
+      });
+    }
+
     if (!files?.image || files.image.length === 0) {
       return sendResponse(res, {
         statusCode: httpStatus.BAD_REQUEST,
