@@ -522,7 +522,7 @@ const getDayTripTripServicesByFromLocationGroup = async (
 
 // ----------------- multi day tour -----------------
 
-// create MULTI_DAY_TOUR trip service
+
 const createMultiDayTourTripService = async (
   userId: string,
   payload: ITripService,
