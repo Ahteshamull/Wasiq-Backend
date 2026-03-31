@@ -187,10 +187,7 @@ const createExploreServiceValidationSchema = z.object({
       .string()
       .optional()
       .transform((val) => (val ? parseInt(val) : undefined))
-      .refine(
-        (val) => !val || val > 0,
-        "Time must be a positive integer",
-      ),
+      .refine((val) => !val || val > 0, "Time must be a positive integer"),
     groupType: z.string().optional(),
   }),
 });
@@ -286,6 +283,7 @@ const createMultiDayTourTripServiceValidationSchema = z.object({
 // update trip service validation schema
 const updateTripServiceValidationSchema = z.object({
   body: z.object({
+    title: z.string().min(1, "Title is required").optional(),
     from: z.string().min(1, "From location is required").optional(),
     fromLat: z
       .string()
