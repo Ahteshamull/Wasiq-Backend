@@ -15,9 +15,12 @@ if (!fs.existsSync(uploadsDir)) {
 const allowedTypes = [
   // images
   "image/jpeg",
+  "image/jpg",
   "image/png",
   "image/avif",
   "image/webp",
+  "image/gif",
+  "image/svg+xml",
 
   // documents
   "application/pdf",
@@ -87,7 +90,7 @@ const fileFilter = (
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error("Unsupported file type"));
+    cb(new Error("Unsupported file type, this file not support"));
   }
 };
 
