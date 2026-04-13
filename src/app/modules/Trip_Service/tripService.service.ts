@@ -543,7 +543,6 @@ const createMultiDayTourTripService = async (
     select: {
       id: true,
       title: true,
-      includedContent: true,
       serviceType: true,
       price: true,
       groupType: true,
