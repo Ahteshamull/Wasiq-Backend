@@ -15,7 +15,6 @@ type IOptionsResult = {
 
 const calculatedPagination = (options: IOptions): IOptionsResult => {
   const page = Number(options.page) || 1;
-  // limit না দিলে undefined — Prisma-তে take: undefined মানে সব record
   const limit = options.limit ? Number(options.limit) : undefined;
   const skip = (page - 1) * (limit ?? 0);
   const sortBy = options.sortBy || "createdAt";
