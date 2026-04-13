@@ -27,7 +27,7 @@ export type INewsletterResponse = {
   meta: {
     total: number;
     page: number;
-    limit: number;
+    limit: number | undefined;
   };
   data: INewsletterSubscriber[];
 };

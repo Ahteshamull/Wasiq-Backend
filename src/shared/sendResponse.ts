@@ -6,7 +6,7 @@ const sendResponse = <T>(res: Response, jsonData: {
     message: string,
     meta?: {
         page: number,
-        limit: number,
+        limit: number | undefined,
         total: number
     },
     data: T | null | undefined

@@ -59,7 +59,7 @@ export type IAdminResponse = {
   meta: {
     total: number;
     page: number;
-    limit: number;
+    limit: number | undefined;
   };
   data: SafeUser[];
 };
