@@ -244,7 +244,7 @@ const createExploreService = async (
   // map frontend fields to schema fields
   const dataToInsert = {
     userId: user.id,
-    serviceType: ServiceType.DAY_TRIP, 
+    serviceType: ServiceType.DAY_TRIP,
     title: payload.title,
     description: payload.description,
     from: payload.location, // location mappings to from
@@ -522,7 +522,6 @@ const getDayTripTripServicesByFromLocationGroup = async (
 
 // ----------------- multi day tour -----------------
 
-
 const createMultiDayTourTripService = async (
   userId: string,
   payload: ITripService,
@@ -544,6 +543,7 @@ const createMultiDayTourTripService = async (
     select: {
       id: true,
       title: true,
+      includedContent: true,
       serviceType: true,
       price: true,
       groupType: true,

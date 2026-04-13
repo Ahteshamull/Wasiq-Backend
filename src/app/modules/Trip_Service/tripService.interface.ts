@@ -6,6 +6,7 @@ export type ITripService = Omit<
 > & {
   id?: string;
   title?: string | null;
+  includedContent?: string[];
   createdAt?: Date;
   updatedAt?: Date;
 };
