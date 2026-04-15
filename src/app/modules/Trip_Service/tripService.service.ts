@@ -534,7 +534,7 @@ const createMultiDayTourTripService = async (
     throw new ApiError(httpStatus.NOT_FOUND, "User not found");
   }
 
-  const result = await prisma.tripService.create({
+  const result = await (prisma.tripService as any).create({
     data: {
       ...payload,
       userId: user.id,
@@ -690,7 +690,7 @@ const getMultiDayTourTripServicesByTourDaysGroup = async (
     AND: filters,
   };
 
-  const trips = await prisma.tripService.findMany({
+  const trips = await (prisma.tripService as any).findMany({
     where,
     skip,
     take: limit,
@@ -733,7 +733,7 @@ const getMultiDayTourTripServicesByTourDaysGroup = async (
   });
 
   // group by tourDays
-  const groupedData = trips.reduce((acc: any[], trip) => {
+  const groupedData = trips.reduce((acc: any[], trip: any) => {
     const existingGroup = acc.find((item) => item.tourDays === trip.tourDays);
 
     if (existingGroup) {
@@ -1206,7 +1206,7 @@ const getTripsByLocationForModal = async (
     AND: filters,
   };
 
-  const result = await prisma.tripService.findMany({
+  const result = await (prisma.tripService as any).findMany({
     where,
     skip,
     take: limit,
@@ -1224,6 +1224,12 @@ const getTripsByLocationForModal = async (
       price: true,
       images: true,
       serviceType: true,
+      duration: true,
+      startTime: true,
+      groupSize: true,
+      pickup: true,
+      includedContent: true,
+      excludedContent: true,
     },
   });
 
