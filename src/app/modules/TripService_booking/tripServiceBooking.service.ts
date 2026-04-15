@@ -318,10 +318,32 @@ const deleteTripServiceBooking = async (id: string) => {
   return result;
 };
 
+// update trip service booking
+const updateTripServiceBooking = async (
+  id: string,
+  payload: Partial<TripServiceBooking>,
+): Promise<TripServiceBooking> => {
+  const findBooking = await prisma.tripServiceBooking.findUnique({
+    where: { id },
+  });
+
+  if (!findBooking) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Booking not found");
+  }
+
+  const result = await prisma.tripServiceBooking.update({
+    where: { id },
+    data: payload,
+  });
+
+  return result;
+};
+
 export const TripServiceBookingService = {
   createTripServiceBooking,
   getMyTripServiceBookings,
   getAllTripServiceBookings,
   getSingleBooking,
+  updateTripServiceBooking,
   deleteTripServiceBooking,
 };

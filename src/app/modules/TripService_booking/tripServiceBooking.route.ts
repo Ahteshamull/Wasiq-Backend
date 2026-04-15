@@ -17,6 +17,15 @@ router.post(
   TripServiceBookingController.createTripServiceBooking,
 );
 
+router.patch(
+  "/update-booking/:id",
+  auth(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.USER, UserRole.AGENT),
+  validateRequest(
+    TripServiceBookingValidation.updateTripServiceBookingValidation,
+  ),
+  TripServiceBookingController.updateTripServiceBooking,
+);
+
 // get my trip service booking
 router.get(
   "/my-bookings",

@@ -92,10 +92,28 @@ const deleteTripServiceBooking = catchAsync(
   },
 );
 
+// update trip service booking
+const updateTripServiceBooking = catchAsync(
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const result = await (
+      TripServiceBookingService as any
+    ).updateTripServiceBooking(id, req.body);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Trip service booking updated successfully",
+      data: result,
+    });
+  },
+);
+
 export const TripServiceBookingController = {
   createTripServiceBooking,
   getMyTripServiceBookings,
   getAllTripServiceBookings,
   getSingleBooking,
+  updateTripServiceBooking,
   deleteTripServiceBooking,
 };
