@@ -197,7 +197,12 @@ const createExploreServiceValidationSchema = z.object({
 const createMultiDayTourTripServiceValidationSchema = z.object({
   body: z.object({
     title: z.string().min(1, "Title is required"),
+    duration: z.string().optional(),
+    startTime: z.string().optional(),
+    groupSize: z.string().optional(),
+    pickup: z.string().optional(),
     includedContent: z.array(z.string()).optional(),
+    excludedContent: z.array(z.string()).optional(),
     from: z.string().optional(),
     fromLat: z
       .string()
@@ -286,6 +291,12 @@ const createMultiDayTourTripServiceValidationSchema = z.object({
 const updateTripServiceValidationSchema = z.object({
   body: z.object({
     title: z.string().min(1, "Title is required").optional(),
+    duration: z.string().optional(),
+    startTime: z.string().optional(),
+    groupSize: z.string().optional(),
+    pickup: z.string().optional(),
+    includedContent: z.array(z.string()).optional(),
+    excludedContent: z.array(z.string()).optional(),
     from: z.string().min(1, "From location is required").optional(),
     fromLat: z
       .string()

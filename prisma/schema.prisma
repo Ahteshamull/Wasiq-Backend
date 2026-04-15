@@ -181,8 +181,16 @@ model TripService {
   reviewCount       Int                @default(0)
   isService         EveryServiceStatus @default(AVAILABLE)
   status            ServiceStatus      @default(ACTIVE)
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
+
+  duration        String?
+  startTime       String?
+  groupSize       String?
+  pickup          String?
+  includedContent String[]
+  excludedContent String[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // relations
   user                 User                  @relation(fields: [userId], references: [id])

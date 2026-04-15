@@ -6,7 +6,12 @@ export type ITripService = Omit<
 > & {
   id?: string;
   title?: string | null;
+  duration?: string | null;
+  startTime?: string | null;
+  groupSize?: string | null;
+  pickup?: string | null;
   includedContent?: string[];
+  excludedContent?: string[];
   createdAt?: Date;
   updatedAt?: Date;
 };

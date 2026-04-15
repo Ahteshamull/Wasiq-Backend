@@ -12,7 +12,7 @@ router.post(
   ReviewController.createTripServiceReview,
 );
 
-//localhost:5000/api/v1/review/service-all-reviews 
+//localhost:5000/api/v1/review/service-all-reviews
 
 router.get(
   "/service-all-reviews",
