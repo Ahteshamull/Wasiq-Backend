@@ -37,5 +37,11 @@ router.get(
   auth(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.AGENT, UserRole.USER),
   TripServiceBookingController.getSingleBooking,
 );
+//local
+router.delete(
+  "/delete-booking/:id",
+  auth(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.USER, UserRole.AGENT),
+  TripServiceBookingController.deleteTripServiceBooking,
+);
 
 export const tripServiceBookingRoute = router;

@@ -77,9 +77,25 @@ const getSingleBooking = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// delete trip service booking
+const deleteTripServiceBooking = catchAsync(
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const result = await (TripServiceBookingService as any).deleteTripServiceBooking(id);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Trip service booking deleted successfully",
+      data: result,
+    });
+  },
+);
+
 export const TripServiceBookingController = {
   createTripServiceBooking,
   getMyTripServiceBookings,
   getAllTripServiceBookings,
-  getSingleBooking
+  getSingleBooking,
+  deleteTripServiceBooking,
 };
