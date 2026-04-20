@@ -59,6 +59,24 @@ const getAgentBookings = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+// get user bookings
+const getUserBookings = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+  const { timeRange, status } = req.query;
+
+  const result = await StatisticsService.getUserBookings(
+    userId,
+    timeRange as string,
+    status as string,
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "User bookings fetched successfully",
+    data: result,
+  });
+});
 
 // get user dashboard tab info
 const getUserDashboardTabInfo = catchAsync(
@@ -132,6 +150,7 @@ export const StatisticsController = {
   // sales
   getAgentTotalEarningsAndBookings,
   getAgentBookings,
+  getUserBookings,
   getUserDashboardTabInfo,
   getAdminTotalBookings,
   getAdminTotalReviews,

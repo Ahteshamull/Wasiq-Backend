@@ -135,6 +135,18 @@ router.get(
   TripServiceController.getAirportTransferTripServices,
 );
 
+// get all trip services TRANSFER
+router.get(
+  "/transfer",
+  TripServiceController.getTransferTripServices,
+);
+
+// get all trip services TRANSFER and isPopular
+router.get(
+  "/transfer/popular",
+  TripServiceController.getTransferPopularTripServices,
+);
+
 // get all trip services AIRPORT_TRANSFER and isPopular
 router.get(
   "/airport-transfer/popular",
@@ -160,5 +172,9 @@ router.delete(
   auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
   TripServiceController.deleteTripService,
 );
+
+
+router.get("/form-location/:location", TripServiceController.getTripServicesByFromLocation);
+router.get("/from-location/:location", TripServiceController.getTripServicesByFromLocation);
 
 export const tripServiceRoutes = router;

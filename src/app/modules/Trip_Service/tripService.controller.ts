@@ -546,6 +546,41 @@ const getAirportTransferPopularTripServices = catchAsync(
   },
 );
 
+// ----------------- transfer -----------------
+
+// get all trip services TRANSFER
+const getTransferTripServices = catchAsync(
+  async (req: Request, res: Response) => {
+    const options = pick(req.query, paginationFields);
+    const result = await TripServiceService.getTransferTripServices(options);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "TRANSFER Trip services retrieved successfully",
+      data: result.data,
+      meta: result.meta,
+    });
+  },
+);
+
+// get all trip services TRANSFER and isPopular
+const getTransferPopularTripServices = catchAsync(
+  async (req: Request, res: Response) => {
+    const options = pick(req.query, paginationFields);
+    const result =
+      await TripServiceService.getTransferPopularTripServices(options);
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "TRANSFER and isPopular Trip services retrieved successfully",
+      data: result.data,
+      meta: result.meta,
+    });
+  },
+);
+
 // get single trip service
 const getSingleTripService = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -638,6 +673,25 @@ const getTripsByLocationForModal = catchAsync(
   },
 );
 
+// get trip services by from location
+const getTripServicesByFromLocation = catchAsync(async (req: Request, res: Response) => {
+  const options = pick(req.query, paginationFields);
+  const location = req.params.location as string;
+
+  const result = await TripServiceService.getTripServicesByFromLocation(
+    location,
+    options
+  );
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Trip services by location retrieved successfully",
+    data: result.data,
+    meta: result.meta,
+  });
+});
+
 export const TripServiceController = {
   createTripService,
   getAllTripServices,
@@ -667,6 +721,10 @@ export const TripServiceController = {
   getAirportTransferTripServices,
   getAirportTransferPopularTripServices,
 
+  // transfer
+  getTransferTripServices,
+  getTransferPopularTripServices,
+
   getSingleTripService,
   updateTripService,
   deleteTripService,
@@ -677,4 +735,5 @@ export const TripServiceController = {
 
   // modal
   getTripsByLocationForModal,
+  getTripServicesByFromLocation,
 };

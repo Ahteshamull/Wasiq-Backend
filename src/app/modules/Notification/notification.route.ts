@@ -9,63 +9,63 @@ const router = express.Router();
 router.get(
   "/my-notifications",
   auth(),
-  NotificationController.getMyNotifications
+  NotificationController.getMyNotifications,
 );
 
 // send single notification
 router.post(
   "/send-notification",
   auth(),
-  NotificationController.sendSingleNotification
+  NotificationController.sendSingleNotification,
 );
 
 // send notifications
 router.post(
   "/send-notification",
   auth(),
-  NotificationController.sendNotifications
+  NotificationController.sendNotifications,
 );
 
 // get all notifications
 router.get(
   "/all-notifications",
   auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
-  NotificationController.getAllNotifications
+  NotificationController.getAllNotifications,
 );
 
 // get single notification
 router.get(
   "/:notificationId",
   auth(),
-  NotificationController.getSingleNotificationById
+  NotificationController.getSingleNotificationById,
 );
 
 // delete notification
 router.delete(
   "/:notificationId",
   auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
-  NotificationController.deleteNotification
+  NotificationController.deleteNotification,
 );
 
 // mark as read notification
 router.patch(
   "/mark-as-read/:notificationId",
   auth(),
-  NotificationController.markAsReadNotification
+  NotificationController.markAsReadNotification,
 );
 
 // mark as unread notification
 router.patch(
   "/mark-as-unread/:notificationId",
   auth(),
-  NotificationController.markAsUnreadNotification
+  NotificationController.markAsUnreadNotification,
 );
 
 // mark all as read notification
 router.patch(
   "/mark-all-as-read",
   auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
-  NotificationController.markAllAsReadNotification
+  NotificationController.markAllAsReadNotification,
 );
 
 export const notificationsRoute = router;

@@ -22,8 +22,15 @@ router.get(
 // get agent bookings
 router.get(
   "/agent-bookings",
-  auth(UserRole.AGENT),
+  auth(UserRole.AGENT, UserRole.USER),
   StatisticsController.getAgentBookings,
+);
+
+// get user bookings
+router.get(
+  "/user-bookings",
+  auth(UserRole.USER),
+  StatisticsController.getUserBookings,
 );
 
 // get user dashboard tab info
