@@ -71,6 +71,59 @@ const createUser = async (payload: any) => {
   return user;
 };
 
+// create client
+const createClient = async (payload: any) => {
+  // check if email exists
+  const existingUser = await prisma.user.findUnique({
+    where: { email: payload.email },
+  });
+
+  if (existingUser) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "User already exists");
+  }
+
+  // hash password
+  const hashedPassword = await bcrypt.hash(payload.password, 12);
+
+  // create user
+  const user = await prisma.user.create({
+    data: {
+      ...payload,
+      role: UserRole.USER,
+      status: UserStatus.ACTIVE,
+      password: hashedPassword,
+    },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      profileImage: true,
+      contactNumber: true,
+      address: true,
+      country: true,
+      role: true,
+      status: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  // send welcome email
+  const welcomeHtml = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <h2 style="color: #333;">Welcome to Our Platform!</h2>
+      <p>Hi ${user.fullName},</p>
+      <p>An account has been created for you by our agent. You can now log in and start using our services.</p>
+      <p>Your password is: <strong>${payload.password}</strong></p>
+      <p>Best regards,<br>Team</p>
+    </div>
+  `;
+
+  await emailSender("Welcome to Our Platform", user.email, welcomeHtml);
+
+  return user;
+};
+
 // create agent
 const createAgent = async (payload: any) => {
   // check if email exists
@@ -888,6 +941,7 @@ const deleteUser = async (
 
 export const UserService = {
   createUser,
+  createClient,
   createAgent,
   createAdminBySupperAdmin,
   verifyOtpAndCreateUser,

@@ -65,6 +65,13 @@ router.post(
   UserController.createAgent,
 );
 
+// router.post(
+//   "/create-client",
+//   auth(UserRole.AGENT, UserRole.ADMIN, UserRole.SUPER_ADMIN),
+//   validateRequest(userValidation.createUserZodSchema),
+//   UserController.createClient,
+// );
+
 // create role for supper admin
 router.post(
   "/add-role",

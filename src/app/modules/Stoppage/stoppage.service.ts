@@ -7,6 +7,19 @@ import prisma from "../../../shared/prisma";
 // create stoppage
 const createStoppage = async (data: IStoppage): Promise<any> => {
   try {
+    const isExist = await prisma.stoppage.findUnique({
+      where: {
+        name: data.name,
+      },
+    });
+
+    if (isExist) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        "Stoppage with this name already exists",
+      );
+    }
+
     const stoppage = await prisma.stoppage.create({
       data: {
         name: data.name,
@@ -158,6 +171,19 @@ const updateStoppage = async (
     // if stoppage not found
     if (!isExist) {
       throw new ApiError(httpStatus.NOT_FOUND, "Stoppage not found");
+    }
+
+    if (data.name) {
+      const isNameExist = await prisma.stoppage.findUnique({
+        where: { name: data.name },
+      });
+
+      if (isNameExist && isNameExist.id !== id) {
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          "Stoppage with this name already exists",
+        );
+      }
     }
 
     const result = await prisma.stoppage.update({

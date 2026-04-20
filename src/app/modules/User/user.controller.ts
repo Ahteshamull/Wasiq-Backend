@@ -21,6 +21,19 @@ const createUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// create client by agent
+const createClient = catchAsync(async (req: Request, res: Response) => {
+  const userData = req.body;
+  const result = await UserService.createClient(userData);
+
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: "Client created successfully",
+    data: result,
+  });
+});
+
 // create agent
 const createAgent = catchAsync(async (req: Request, res: Response) => {
   const userData = req.body;
@@ -229,6 +242,7 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
 
 export const UserController = {
   createUser,
+  createClient,
   createAgent,
   createAdminBySupperAdmin,
   verifyOtpAndCreateUser,
