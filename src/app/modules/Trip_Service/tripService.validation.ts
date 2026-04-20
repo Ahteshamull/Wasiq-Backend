@@ -49,6 +49,7 @@ const createTripServiceValidationSchema = z.object({
         "MULTI_DAY_TOUR",
         "PRIVATE_TRANSFER",
         "AIRPORT_TRANSFER",
+        "TRANSFER",
       ])
       .default("DAY_TRIP"),
     routeType: z.string().optional().default("city_to_city"),
@@ -135,6 +136,7 @@ const createDayTripServiceValidationSchema = z.object({
         "MULTI_DAY_TOUR",
         "PRIVATE_TRANSFER",
         "AIRPORT_TRANSFER",
+        "TRANSFER",
       ])
       .default("DAY_TRIP"),
     routeType: z.string().optional().default("city_to_city"),
@@ -250,6 +252,7 @@ const createMultiDayTourTripServiceValidationSchema = z.object({
         "MULTI_DAY_TOUR",
         "PRIVATE_TRANSFER",
         "AIRPORT_TRANSFER",
+        "TRANSFER",
       ])
       .default("DAY_TRIP"),
     routeType: z.string().optional().default("city_to_city"),
@@ -346,6 +349,7 @@ const updateTripServiceValidationSchema = z.object({
         "MULTI_DAY_TOUR",
         "PRIVATE_TRANSFER",
         "AIRPORT_TRANSFER",
+        "TRANSFER",
       ])
       .optional(),
     routeType: z.string().optional(),
