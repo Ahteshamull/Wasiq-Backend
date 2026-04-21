@@ -42,6 +42,8 @@ export type SafeUser = {
   role: UserRole;
   fcmToken: string | null;
   status: UserStatus;
+  createdById?: string | null;
+  createdBy?: Partial<SafeUser>;
   createdAt: Date;
   updatedAt: Date;
 };

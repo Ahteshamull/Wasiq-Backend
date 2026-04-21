@@ -24,7 +24,8 @@ const createUser = catchAsync(async (req: Request, res: Response) => {
 // create client by agent
 const createClient = catchAsync(async (req: Request, res: Response) => {
   const userData = req.body;
-  const result = await UserService.createClient(userData);
+  const agentId = req.user?.id || null;
+  const result = await UserService.createClient(userData, agentId);
 
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
@@ -240,6 +241,45 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getClientByAgent = catchAsync(async (req: Request, res: Response) => {
+  const agentId = req.user.id;
+  const options = pick(req.query, paginationFields);
+  const result = await UserService.getClientByAgent(agentId, options);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Clients fetched successfully",
+    meta: result.meta,
+    data: result.data,
+  });
+});
+
+const getSingleClient = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const result = await UserService.getSingleClient(id);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Client fetched successfully",
+    data: result,
+  });
+});
+
+const updateClient = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const data = req.body;
+  const result = await UserService.updateClient(id, data);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Client updated successfully",
+    data: result,
+  });
+});
+
 export const UserController = {
   createUser,
   createClient,
@@ -257,4 +297,7 @@ export const UserController = {
   getMyProfile,
   deleteMyAccount,
   deleteUser,
+  getClientByAgent,
+  getSingleClient,
+  updateClient,
 };

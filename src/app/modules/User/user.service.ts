@@ -72,7 +72,7 @@ const createUser = async (payload: any) => {
 };
 
 // create client
-const createClient = async (payload: any) => {
+const createClient = async (payload: any, agentId?: string | null) => {
   // check if email exists
   const existingUser = await prisma.user.findUnique({
     where: { email: payload.email },
@@ -92,6 +92,7 @@ const createClient = async (payload: any) => {
       role: UserRole.USER,
       status: UserStatus.ACTIVE,
       password: hashedPassword,
+      createdById: agentId,
     },
     select: {
       id: true,
@@ -103,9 +104,18 @@ const createClient = async (payload: any) => {
       country: true,
       role: true,
       status: true,
+      createdById: true,
+      createdBy: {
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          profileImage: true,
+        },
+      },
       createdAt: true,
       updatedAt: true,
-    },
+    } as any,
   });
 
   // send welcome email
@@ -113,13 +123,24 @@ const createClient = async (payload: any) => {
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
       <h2 style="color: #333;">Welcome to Our Platform!</h2>
       <p>Hi ${user.fullName},</p>
-      <p>An account has been created for you by our agent. You can now log in and start using our services.</p>
+      <p>An account has been created for you${agentId ? " by our agent" : ""}. You can now log in and start using our services.</p>
       <p>Your password is: <strong>${payload.password}</strong></p>
       <p>Best regards,<br>Team</p>
     </div>
   `;
 
-  await emailSender("Welcome to Our Platform", user.email, welcomeHtml);
+  await emailSender("Welcome to Our Platform", user.email as unknown as string, welcomeHtml);
+
+  // send notification to agent if client was created by an agent
+  if (agentId) {
+    await prisma.notifications.create({
+      data: {
+        receiverId: agentId,
+        title: "New Client Created",
+        body: `You have successfully created a new client: ${user.fullName} (${user.email})`,
+      },
+    });
+  }
 
   return user;
 };
@@ -874,11 +895,21 @@ const deleteUser = async (
     async (tx) => {
       // 1. Delete all dependencies of user's bookings
       if (bookingIds.length > 0) {
-        await tx.bookingStoppage.deleteMany({ where: { bookingId: { in: bookingIds } } });
-        await tx.bookingVehicle.deleteMany({ where: { bookingId: { in: bookingIds } } });
-        await tx.payment.deleteMany({ where: { tripServiceBookingId: { in: bookingIds } } });
-        await tx.notifications.deleteMany({ where: { bookingId: { in: bookingIds } } });
-        await tx.tripServiceBooking.deleteMany({ where: { id: { in: bookingIds } } });
+        await tx.bookingStoppage.deleteMany({
+          where: { bookingId: { in: bookingIds } },
+        });
+        await tx.bookingVehicle.deleteMany({
+          where: { bookingId: { in: bookingIds } },
+        });
+        await tx.payment.deleteMany({
+          where: { tripServiceBookingId: { in: bookingIds } },
+        });
+        await tx.notifications.deleteMany({
+          where: { bookingId: { in: bookingIds } },
+        });
+        await tx.tripServiceBooking.deleteMany({
+          where: { id: { in: bookingIds } },
+        });
       }
 
       // 2. Delete all dependencies of user's TripServices (if they are an agent)
@@ -891,22 +922,42 @@ const deleteUser = async (
         const relatedBookingIds = relatedBookings.map((b) => b.id);
 
         if (relatedBookingIds.length > 0) {
-          await tx.bookingStoppage.deleteMany({ where: { bookingId: { in: relatedBookingIds } } });
-          await tx.bookingVehicle.deleteMany({ where: { bookingId: { in: relatedBookingIds } } });
-          await tx.payment.deleteMany({ where: { tripServiceBookingId: { in: relatedBookingIds } } });
-          await tx.notifications.deleteMany({ where: { bookingId: { in: relatedBookingIds } } });
-          await tx.tripServiceBooking.deleteMany({ where: { id: { in: relatedBookingIds } } });
+          await tx.bookingStoppage.deleteMany({
+            where: { bookingId: { in: relatedBookingIds } },
+          });
+          await tx.bookingVehicle.deleteMany({
+            where: { bookingId: { in: relatedBookingIds } },
+          });
+          await tx.payment.deleteMany({
+            where: { tripServiceBookingId: { in: relatedBookingIds } },
+          });
+          await tx.notifications.deleteMany({
+            where: { bookingId: { in: relatedBookingIds } },
+          });
+          await tx.tripServiceBooking.deleteMany({
+            where: { id: { in: relatedBookingIds } },
+          });
         }
 
-        await tx.tripServiceStoppage.deleteMany({ where: { tripServiceId: { in: tripServiceIds } } });
-        await tx.vehicle.deleteMany({ where: { tripServiceId: { in: tripServiceIds } } });
-        await tx.review.deleteMany({ where: { tripServiceId: { in: tripServiceIds } } });
-        await tx.tripService.deleteMany({ where: { id: { in: tripServiceIds } } });
+        await tx.tripServiceStoppage.deleteMany({
+          where: { tripServiceId: { in: tripServiceIds } },
+        });
+        await tx.vehicle.deleteMany({
+          where: { tripServiceId: { in: tripServiceIds } },
+        });
+        await tx.review.deleteMany({
+          where: { tripServiceId: { in: tripServiceIds } },
+        });
+        await tx.tripService.deleteMany({
+          where: { id: { in: tripServiceIds } },
+        });
       }
 
       // 3. Delete direct user activities
       await tx.payment.deleteMany({ where: { userId } });
-      await tx.notifications.deleteMany({ where: { OR: [{ receiverId: userId }, { partnerId: userId }] } });
+      await tx.notifications.deleteMany({
+        where: { OR: [{ receiverId: userId }, { partnerId: userId }] },
+      });
       await tx.review.deleteMany({ where: { userId } });
       await tx.favorite.deleteMany({ where: { userId } });
 
@@ -915,17 +966,23 @@ const deleteUser = async (
         where: { OR: [{ person1Id: userId }, { person2Id: userId }] },
         select: { channelName: true, id: true },
       });
-      
+
       // Also delete any isolated messages sent by user
       await tx.message.deleteMany({ where: { senderId: userId } });
-      
+
       if (channels.length > 0) {
         const channelNames = channels.map((c) => c.channelName);
-        await tx.message.deleteMany({ where: { channelName: { in: channelNames } } });
-        await tx.channel.deleteMany({ where: { id: { in: channels.map((c) => c.id) } } });
+        await tx.message.deleteMany({
+          where: { channelName: { in: channelNames } },
+        });
+        await tx.channel.deleteMany({
+          where: { id: { in: channels.map((c) => c.id) } },
+        });
       }
 
-      await tx.support.deleteMany({ where: { OR: [{ userId }, { reportedUserId: userId }] } });
+      await tx.support.deleteMany({
+        where: { OR: [{ userId }, { reportedUserId: userId }] },
+      });
 
       // Finally delete the user
       await tx.user.delete({ where: { id: userId } });
@@ -933,10 +990,121 @@ const deleteUser = async (
     {
       maxWait: 5000,
       timeout: 10000,
-    }
+    },
   );
+};
 
-  return;
+const getClientByAgent = async (
+  agentId: string,
+  options: IPaginationOptions,
+): Promise<IGenericResponse<SafeUser[]>> => {
+  const { limit, page, skip } = paginationHelpers.calculatedPagination(options);
+
+  const where: any = {
+    createdById: agentId,
+    role: UserRole.USER,
+  };
+
+  const result = await prisma.user.findMany({
+    where,
+    skip,
+    take: limit,
+    orderBy:
+      options.sortBy && options.sortOrder
+        ? {
+            [options.sortBy]: options.sortOrder,
+          }
+        : {
+            createdAt: "desc",
+          },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      profileImage: true,
+      contactNumber: true,
+      address: true,
+      country: true,
+      role: true,
+      status: true,
+      createdById: true,
+      createdAt: true,
+      updatedAt: true,
+    } as any,
+  });
+
+  const total = await prisma.user.count({ where });
+
+  return {
+    meta: {
+      page,
+      limit,
+      total,
+    },
+    data: result as any,
+  };
+};
+
+const getSingleClient = async (id: string): Promise<SafeUser | null> => {
+  const result = await prisma.user.findUnique({
+    where: {
+      id,
+      role: UserRole.USER,
+    },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      profileImage: true,
+      contactNumber: true,
+      address: true,
+      country: true,
+      role: true,
+      status: true,
+      createdById: true,
+      createdBy: {
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          profileImage: true,
+        },
+      },
+      createdAt: true,
+      updatedAt: true,
+    } as any,
+  });
+  return result as any;
+};
+
+const updateClient = async (id: string, payload: any) => {
+  // Check if user exists and is a client
+  const existingUser = await prisma.user.findUnique({
+    where: { id, role: UserRole.USER },
+  });
+
+  if (!existingUser) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Client not found");
+  }
+
+  const result = await prisma.user.update({
+    where: { id },
+    data: payload,
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      profileImage: true,
+      contactNumber: true,
+      address: true,
+      country: true,
+      role: true,
+      status: true,
+      createdAt: true,
+      updatedAt: true,
+    } as any,
+  });
+  return result;
 };
 
 export const UserService = {
@@ -956,4 +1124,7 @@ export const UserService = {
   getMyProfile,
   deleteMyAccount,
   deleteUser,
+  getClientByAgent,
+  getSingleClient,
+  updateClient,
 };

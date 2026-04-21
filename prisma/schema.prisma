@@ -121,6 +121,11 @@ model User {
   paymentNotification Boolean @default(true)
   emailNotification   Boolean @default(true)
 
+  // who created this client (agent id)
+  createdById  String? @db.ObjectId
+  createdBy    User?   @relation("UserCreatedBy", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  createdUsers User[]  @relation("UserCreatedBy")
+
   otp        String?
   otpExpiry  DateTime?
   identifier String?

@@ -2,6 +2,7 @@ import express from "express";
 import validateRequest from "../../middlewares/validateRequest";
 import { userValidation } from "./user.validation";
 import auth from "../../middlewares/auth";
+import optionalAuth from "../../middlewares/optionalAuth";
 import { uploadFile } from "../../../helpars/fileUploader";
 import { UserController } from "./user.controller";
 import { UserRole } from "@prisma/client";
@@ -44,6 +45,24 @@ router.get(
   UserController.getMyProfile,
 );
 
+router.get(
+  "/get-client-by-agent",
+  auth(UserRole.AGENT),
+  UserController.getClientByAgent,
+);
+
+router.get(
+  "/get-single-client/:id",
+  optionalAuth,
+  UserController.getSingleClient,
+);
+
+router.patch(
+  "/update-client/:id",
+  optionalAuth,
+  UserController.updateClient,
+);
+
 // get user by id
 router.get(
   "/:id",
@@ -67,6 +86,7 @@ router.post(
 
 router.post(
   "/create-client",
+  optionalAuth,
   validateRequest(userValidation.createUserZodSchema),
   UserController.createClient,
 );
