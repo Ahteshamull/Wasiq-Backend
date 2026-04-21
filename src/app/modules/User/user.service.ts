@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs";
 import httpStatus from "http-status";
 import ApiError from "../../../errors/ApiErrors";
 import prisma from "../../../shared/prisma";
-import { Prisma, User, UserRole, UserStatus } from "@prisma/client";
+import { Prisma, User, UserRole, UserStatus, BookingStatus } from "@prisma/client";
 import { ObjectId } from "mongodb";
 import { IPaginationOptions } from "../../../interfaces/paginations";
 import {
@@ -664,6 +664,10 @@ const getAllAdmins = async (
 
 // get user by id
 const getUserById = async (id: string): Promise<SafeUser> => {
+  if (!ObjectId.isValid(id)) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Invalid User ID format");
+  }
+
   const user = await prisma.user.findUnique({
     where: { id },
     select: {
@@ -1107,7 +1111,60 @@ const updateClient = async (id: string, payload: any) => {
   return result;
 };
 
+const getDashboardStats = async (userId: string) => {
+  const activeBookings = await prisma.tripServiceBooking.count({
+    where: {
+      userId,
+      status: BookingStatus.CONFIRMED,
+    },
+  });
+
+  const completedTrips = await prisma.tripServiceBooking.count({
+    where: {
+      userId,
+      status: BookingStatus.COMPLETED,
+    },
+  });
+
+  const pendingBookings = await prisma.tripServiceBooking.count({
+    where: {
+      userId,
+      status: BookingStatus.PENDING,
+    },
+  });
+
+  const recentBookings = await prisma.tripServiceBooking.findMany({
+    where: {
+      userId,
+    },
+    take: 5,
+    orderBy: {
+      createdAt: "desc",
+    },
+    include: {
+      tripService: {
+        select: {
+          title: true,
+          images: true,
+          from: true,
+          to: true,
+        },
+      },
+    },
+  });
+
+  return {
+    stats: {
+      activeBookings,
+      completedTrips,
+      pendingBookings,
+    },
+    recentBookings,
+  };
+};
+
 export const UserService = {
+  getDashboardStats,
   createUser,
   createClient,
   createAgent,

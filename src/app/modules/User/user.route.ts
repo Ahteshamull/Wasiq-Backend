@@ -46,6 +46,12 @@ router.get(
 );
 
 router.get(
+  "/dashboard",
+  auth(UserRole.USER),
+  UserController.getDashboardStats,
+);
+
+router.get(
   "/get-client-by-agent",
   auth(UserRole.AGENT),
   UserController.getClientByAgent,

@@ -280,7 +280,20 @@ const updateClient = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getDashboardStats = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user.id;
+  const result = await UserService.getDashboardStats(userId);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Dashboard stats fetched successfully",
+    data: result,
+  });
+});
+
 export const UserController = {
+  getDashboardStats,
   createUser,
   createClient,
   createAgent,
