@@ -212,7 +212,6 @@ const getMyNotifications = async (
   };
 };
 
-// delete notification
 const deleteNotification = async (notificationId: string) => {
   // find notification
   const notification = await prisma.notifications.findUnique({
