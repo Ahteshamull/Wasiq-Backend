@@ -55,6 +55,4 @@ router.delete(
   AuthController.deleteUser,
 );
 
-
-
 export const authRoutes = router;

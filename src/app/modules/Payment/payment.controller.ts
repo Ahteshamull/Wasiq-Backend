@@ -46,8 +46,10 @@ const createStripeCheckoutSession = catchAsync(
 
 // stripe webhook payment
 const stripeHandleWebhook = catchAsync(async (req: Request, res: Response) => {
+  console.log("🔔 Webhook received! Checking signature...");
   const sig = req.headers["stripe-signature"] as string;
   if (!sig) {
+    console.error("❌ Webhook Error: Missing stripe signature in headers");
     throw new ApiError(httpStatus.BAD_REQUEST, "Missing stripe signature", "");
   }
 
@@ -55,15 +57,19 @@ const stripeHandleWebhook = catchAsync(async (req: Request, res: Response) => {
 
   try {
     if (!req.rawBody) {
+      console.error("❌ Webhook Error: Raw body not available");
       throw new ApiError(httpStatus.BAD_REQUEST, "Raw body not available", "");
     }
 
+    // Verify the webhook signature
     event = stripe.webhooks.constructEvent(
       req.rawBody,
       sig,
       config.stripe.webhookSecret as string,
     );
+    console.log(`✅ Webhook verified successfully! Event Type: ${event.type}`);
   } catch (err: any) {
+    console.error(`❌ Webhook Error Verification Failed: ${err.message}`);
     throw new ApiError(
       httpStatus.BAD_REQUEST,
       `Webhook Error: ${err.message}`,
@@ -72,6 +78,7 @@ const stripeHandleWebhook = catchAsync(async (req: Request, res: Response) => {
   }
 
   const result = await PaymentService.stripeHandleWebhook(event);
+  console.log(`🎉 Webhook event ${event.type} processed successfully`);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
