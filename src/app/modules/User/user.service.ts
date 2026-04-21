@@ -118,19 +118,6 @@ const createClient = async (payload: any, agentId?: string | null) => {
     } as any,
   });
 
-  // send welcome email
-  const welcomeHtml = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <h2 style="color: #333;">Welcome to Our Platform!</h2>
-      <p>Hi ${user.fullName},</p>
-      <p>An account has been created for you${agentId ? " by our agent" : ""}. You can now log in and start using our services.</p>
-      <p>Your password is: <strong>${payload.password}</strong></p>
-      <p>Best regards,<br>Team</p>
-    </div>
-  `;
-
-  await emailSender("Welcome to Our Platform", user.email as unknown as string, welcomeHtml);
-
   // send notification to agent if client was created by an agent
   if (agentId) {
     await prisma.notifications.create({
