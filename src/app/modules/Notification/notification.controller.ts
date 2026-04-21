@@ -66,12 +66,14 @@ const getSingleNotificationById = catchAsync(
 // get my all notifications
 const getMyNotifications = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id;
-  const notifications = await NotificationService.getMyNotifications(userId);
+  const options = pick(req.query, paginationFields);
+  const result = await NotificationService.getMyNotifications(userId, options);
   sendResponse(res, {
     success: true,
     statusCode: 200,
     message: "My notifications retrieved successfully",
-    data: notifications,
+    meta: result.meta,
+    data: result.data,
   });
 });
 

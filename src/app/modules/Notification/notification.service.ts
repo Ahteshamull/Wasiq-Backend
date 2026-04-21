@@ -184,11 +184,32 @@ const getSingleNotificationFromDB = async (
 };
 
 // get my all notifications
-const getMyNotifications = async (userId: string) => {
-  return prisma.notifications.findMany({
-    where: { receiverId: userId },
-    orderBy: { createdAt: "desc" }, // newest first
+const getMyNotifications = async (
+  userId: string,
+  options: IPaginationOptions,
+) => {
+  const { limit, page, skip } = paginationHelpers.calculatedPagination(options);
+
+  const where = { receiverId: userId };
+  const result = await prisma.notifications.findMany({
+    where,
+    skip,
+    take: limit,
+    orderBy: options.sortBy && options.sortOrder
+      ? { [options.sortBy]: options.sortOrder }
+      : { createdAt: "desc" },
   });
+
+  const total = await prisma.notifications.count({ where });
+
+  return {
+    meta: {
+      total,
+      page,
+      limit,
+    },
+    data: result,
+  };
 };
 
 // delete notification
@@ -257,7 +278,49 @@ const markAllAsReadNotification = async () => {
   });
 };
 
+const createNotification = async (data: {
+  receiverId: string;
+  title: string;
+  body: string;
+  bookingId?: string;
+}) => {
+  // 1. Save to Database
+  const notification = await prisma.notifications.create({
+    data,
+  });
+
+  // 2. Send Push Notification via FCM if user has a token
+  const user = await prisma.user.findUnique({
+    where: { id: data.receiverId },
+    select: { fcmToken: true },
+  });
+
+  if (user?.fcmToken) {
+    const message = {
+      notification: {
+        title: data.title,
+        body: data.body,
+      },
+      token: user.fcmToken,
+      data: {
+        bookingId: data.bookingId || "",
+        notificationId: notification.id,
+      },
+    };
+
+    try {
+      await admin.messaging().send(message);
+    } catch (error) {
+      console.error("Error sending push notification:", error);
+      // We don't throw here to ensure the DB record is still returned
+    }
+  }
+
+  return notification;
+};
+
 export const NotificationService = {
+  createNotification,
   sendSingleNotification,
   sendNotifications,
   getAllNotifications,

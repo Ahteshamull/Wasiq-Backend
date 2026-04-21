@@ -1,4 +1,5 @@
 import prisma from "../../../shared/prisma";
+import { NotificationService } from "../Notification/notification.service";
 import {
   TripServiceBooking,
   ServiceType,
@@ -185,6 +186,22 @@ const createTripServiceBooking = async (
     }
 
     return booking;
+  });
+
+  // Send notification to the user (Client)
+  await NotificationService.createNotification({
+    receiverId: userId,
+    title: "Booking Created",
+    body: `Your booking for ${tripService.title} has been created successfully.`,
+    bookingId: result.id,
+  });
+
+  // Send notification to the Agent (Service Owner)
+  await NotificationService.createNotification({
+    receiverId: tripService.userId,
+    title: "New Booking Received",
+    body: `You have received a new booking for ${tripService.title} from ${findUser.fullName}.`,
+    bookingId: result.id,
   });
 
   return result;
