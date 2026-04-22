@@ -15,14 +15,14 @@ router.get(
 // send single notification
 router.post(
   "/send-notification",
-  auth(),
+  auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
   NotificationController.sendSingleNotification,
 );
 
-// send notifications
+// send notifications to all users
 router.post(
-  "/send-notification",
-  auth(),
+  "/send-notifications",
+  auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
   NotificationController.sendNotifications,
 );
 
@@ -47,6 +47,13 @@ router.delete(
   NotificationController.deleteNotification,
 );
 
+// mark all as read notification
+router.patch(
+  "/mark-all-as-read",
+  auth(),
+  NotificationController.markAllAsReadNotification,
+);
+
 // mark as read notification
 router.patch(
   "/mark-as-read/:notificationId",
@@ -59,13 +66,6 @@ router.patch(
   "/mark-as-unread/:notificationId",
   auth(),
   NotificationController.markAsUnreadNotification,
-);
-
-// mark all as read notification
-router.patch(
-  "/mark-all-as-read",
-  auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
-  NotificationController.markAllAsReadNotification,
 );
 
 export const notificationsRoute = router;

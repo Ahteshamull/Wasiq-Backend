@@ -80,8 +80,10 @@ const getMyNotifications = catchAsync(async (req: Request, res: Response) => {
 // delete notification
 const deleteNotification = catchAsync(async (req: Request, res: Response) => {
   const notificationId = req.params.notificationId;
+  const userId = (req as any).user.id;
   const notification = await NotificationService.deleteNotification(
-    notificationId
+    notificationId,
+    userId
   );
   sendResponse(res, {
     success: true,
@@ -95,8 +97,10 @@ const deleteNotification = catchAsync(async (req: Request, res: Response) => {
 const markAsReadNotification = catchAsync(
   async (req: Request, res: Response) => {
     const notificationId = req.params.notificationId;
+    const userId = (req as any).user.id;
     const notification = await NotificationService.markAsReadNotification(
-      notificationId
+      notificationId,
+      userId
     );
     sendResponse(res, {
       success: true,
@@ -111,13 +115,15 @@ const markAsReadNotification = catchAsync(
 const markAsUnreadNotification = catchAsync(
   async (req: Request, res: Response) => {
     const notificationId = req.params.notificationId;
+    const userId = (req as any).user.id;
     const notification = await NotificationService.markAsUnreadNotification(
-      notificationId
+      notificationId,
+      userId
     );
     sendResponse(res, {
       success: true,
       statusCode: 200,
-      message: "Notification marked as read successfully",
+      message: "Notification marked as unread successfully",
       data: notification,
     });
   }
@@ -126,8 +132,9 @@ const markAsUnreadNotification = catchAsync(
 // mark all as read notification
 const markAllAsReadNotification = catchAsync(
   async (req: Request, res: Response) => {
-    // const userId = req.user?.id;
-    const notification = await NotificationService.markAllAsReadNotification();
+    const userId = (req as any).user.id;
+    const notification =
+      await NotificationService.markAllAsReadNotification(userId);
     sendResponse(res, {
       success: true,
       statusCode: 200,

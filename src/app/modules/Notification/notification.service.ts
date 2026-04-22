@@ -58,7 +58,7 @@ const sendSingleNotification = async (req: any) => {
       title: req.body.title,
       body: req.body.body,
       bookingId: req.body.bookingId,
-      receiverId: req.params.userId,
+      receiverId: req.body.receiverId,
     },
   });
 };
@@ -212,11 +212,12 @@ const getMyNotifications = async (
   };
 };
 
-const deleteNotification = async (notificationId: string) => {
+const deleteNotification = async (notificationId: string, userId: string) => {
   // find notification
   const notification = await prisma.notifications.findUnique({
     where: {
       id: notificationId,
+      receiverId: userId,
     },
   });
 
@@ -232,11 +233,12 @@ const deleteNotification = async (notificationId: string) => {
 };
 
 // mark as read notification
-const markAsReadNotification = async (notificationId: string) => {
+const markAsReadNotification = async (notificationId: string, userId: string) => {
   // find notification
   const notification = await prisma.notifications.findUnique({
     where: {
       id: notificationId,
+      receiverId: userId,
     },
   });
 
@@ -251,11 +253,15 @@ const markAsReadNotification = async (notificationId: string) => {
 };
 
 // mark as unread notification
-const markAsUnreadNotification = async (notificationId: string) => {
+const markAsUnreadNotification = async (
+  notificationId: string,
+  userId: string
+) => {
   // find notification
   const notification = await prisma.notifications.findUnique({
     where: {
       id: notificationId,
+      receiverId: userId,
     },
   });
 
@@ -270,9 +276,9 @@ const markAsUnreadNotification = async (notificationId: string) => {
 };
 
 // mark all as read notification
-const markAllAsReadNotification = async () => {
+const markAllAsReadNotification = async (userId: string) => {
   return prisma.notifications.updateMany({
-    // where: { receiverId: userId },
+    where: { receiverId: userId },
     data: { read: true },
   });
 };
