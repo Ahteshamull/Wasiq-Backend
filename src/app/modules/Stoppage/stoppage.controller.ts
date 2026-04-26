@@ -7,6 +7,9 @@ import { IStoppageFilters } from "./stoppage.interface";
 import { paginationFields } from "../../../constants/pagination";
 import { uploadFile } from "../../../helpars/fileUploader";
 import { pick } from "../../../shared/pick";
+import { IPaginationOptions } from "../../../interfaces/paginations";
+import { IStoppage } from "./stoppage.interface";
+
 import ApiError from "../../../errors/ApiErrors";
 
 // create stoppage
@@ -15,7 +18,7 @@ const createStoppage = catchAsync(async (req: Request, res: Response) => {
     [fieldname: string]: Express.Multer.File[];
   };
 
-  const stoppageData = req.body;
+  const stoppageData: IStoppage = req.body;
 
   // image required
   if (!files?.image || files.image.length === 0) {
@@ -58,11 +61,11 @@ const getAllStoppages = catchAsync(async (req: Request, res: Response) => {
     "type",
     "minPrice",
     "maxPrice",
-  ]);
-  const paginationOptions = pick(req.query, paginationFields);
+  ]) as IStoppageFilters;
+  const paginationOptions = pick(req.query, paginationFields) as IPaginationOptions;
 
   const result = await StoppageService.getAllStoppages(
-    filters as IStoppageFilters,
+    filters,
     paginationOptions,
   );
 
@@ -95,7 +98,7 @@ const updateStoppage = catchAsync(async (req: Request, res: Response) => {
     [fieldname: string]: Express.Multer.File[];
   };
 
-  const stoppageData = req.body;
+  const stoppageData: Partial<IStoppage> = req.body;
 
   // handle image uploads if provided
   if (files?.image && files.image.length > 0) {
@@ -135,10 +138,34 @@ const deleteStoppage = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// get stoppages by from location
+const getStoppagesByFromLocation = catchAsync(
+  async (req: Request, res: Response) => {
+    const { location } = req.params;
+    const options = pick(req.query, paginationFields) as IPaginationOptions;
+
+    const result = await StoppageService.getStoppagesByFromLocation(
+      location,
+      options,
+    );
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Stoppages retrieved successfully by location",
+      meta: result.meta,
+      data: result.data,
+    });
+  },
+);
+
 export const StoppageController = {
   createStoppage,
   getAllStoppages,
   getSingleStoppage,
   updateStoppage,
   deleteStoppage,
+  getStoppagesByFromLocation,
 };
+
+

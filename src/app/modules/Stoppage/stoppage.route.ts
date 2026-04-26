@@ -22,6 +22,11 @@ router.post(
 // get all stoppages (public)
 router.get("/", StoppageController.getAllStoppages);
 
+router.get(
+  "/from-location/:location",
+  StoppageController.getStoppagesByFromLocation,
+);
+
 // get single stoppage (public)
 router.get("/:id", StoppageController.getSingleStoppage);
 

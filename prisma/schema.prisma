@@ -219,6 +219,9 @@ model Stoppage {
   image       String[]
   latitude    Float
   longitude   Float
+  from        String?
+  to          String?
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

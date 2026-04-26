@@ -46,6 +46,8 @@ const createStoppageValidation = z.object({
       }
       return num;
     }),
+    from: z.string().optional(),
+    to: z.string().optional(),
   }),
 });
 
@@ -106,6 +108,8 @@ const updateStoppageValidation = z.object({
         return num;
       })
       .optional(),
+    from: z.string().optional(),
+    to: z.string().optional(),
   }),
 });
 

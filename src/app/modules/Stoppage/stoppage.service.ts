@@ -3,11 +3,15 @@ import { IStoppage, IStoppageFilters } from "./stoppage.interface";
 import ApiError from "../../../errors/ApiErrors";
 import { paginationHelpers } from "../../../helpars/paginationHelper";
 import prisma from "../../../shared/prisma";
+import { Prisma, Stoppage } from "@prisma/client";
+import { IPaginationOptions } from "../../../interfaces/paginations";
+import { IGenericResponse } from "../../../interfaces/common";
+
 
 // create stoppage
-const createStoppage = async (data: IStoppage): Promise<any> => {
+const createStoppage = async (data: IStoppage): Promise<Stoppage> => {
   try {
-    const isExist = await prisma.stoppage.findUnique({
+    const isExist = await (prisma.stoppage as any).findUnique({
       where: {
         name: data.name,
       },
@@ -20,7 +24,7 @@ const createStoppage = async (data: IStoppage): Promise<any> => {
       );
     }
 
-    const stoppage = await prisma.stoppage.create({
+    const stoppage = await (prisma.stoppage as any).create({
       data: {
         name: data.name,
         type: data.type,
@@ -30,6 +34,8 @@ const createStoppage = async (data: IStoppage): Promise<any> => {
         image: data.image || [],
         latitude: data.latitude,
         longitude: data.longitude,
+        from: data.from,
+        to: data.to,
       },
       select: {
         id: true,
@@ -41,6 +47,8 @@ const createStoppage = async (data: IStoppage): Promise<any> => {
         image: true,
         latitude: true,
         longitude: true,
+        from: true,
+        to: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -61,12 +69,13 @@ const createStoppage = async (data: IStoppage): Promise<any> => {
 // get all stoppages
 const getAllStoppages = async (
   filters: IStoppageFilters,
-  options: any,
-): Promise<any> => {
-  const { page, limit, skip } = paginationHelpers.calculatedPagination(options);
+  options: IPaginationOptions,
+): Promise<IGenericResponse<Stoppage[]>> => {
+  const { page, limit, skip, sortBy, sortOrder } =
+    paginationHelpers.calculatedPagination(options);
   const { searchTerm, type, minPrice, maxPrice } = filters;
 
-  const andConditions: any[] = [];
+  const andConditions: Prisma.StoppageWhereInput[] = [];
 
   if (searchTerm) {
     andConditions.push({
@@ -92,16 +101,16 @@ const getAllStoppages = async (
     andConditions.push({ price: { lte: maxPrice } });
   }
 
-  const whereConditions =
+  const whereConditions: Prisma.StoppageWhereInput =
     andConditions.length > 0 ? { AND: andConditions } : {};
 
-  const result = await prisma.stoppage.findMany({
+  const result = await (prisma.stoppage as any).findMany({
     where: whereConditions,
     skip,
     take: limit,
-    orderBy: options.sortBy
-      ? { [options.sortBy]: options.sortOrder || "desc" }
-      : { createdAt: "desc" },
+    orderBy: sortBy
+      ? { [sortBy]: sortOrder as Prisma.SortOrder }
+      : { createdAt: "desc" as Prisma.SortOrder },
     select: {
       id: true,
       name: true,
@@ -112,6 +121,8 @@ const getAllStoppages = async (
       image: true,
       latitude: true,
       longitude: true,
+      from: true,
+      to: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -132,8 +143,8 @@ const getAllStoppages = async (
 };
 
 // get single stoppage
-const getSingleStoppage = async (id: string): Promise<any> => {
-  const result = await prisma.stoppage.findUnique({
+const getSingleStoppage = async (id: string): Promise<Stoppage> => {
+  const result = await (prisma.stoppage as any).findUnique({
     where: { id },
     select: {
       id: true,
@@ -145,6 +156,8 @@ const getSingleStoppage = async (id: string): Promise<any> => {
       image: true,
       latitude: true,
       longitude: true,
+      from: true,
+      to: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -162,9 +175,9 @@ const getSingleStoppage = async (id: string): Promise<any> => {
 const updateStoppage = async (
   id: string,
   data: Partial<IStoppage>,
-): Promise<any> => {
+): Promise<Stoppage> => {
   try {
-    const isExist = await prisma.stoppage.findUnique({
+    const isExist = await (prisma.stoppage as any).findUnique({
       where: { id },
     });
 
@@ -174,7 +187,7 @@ const updateStoppage = async (
     }
 
     if (data.name) {
-      const isNameExist = await prisma.stoppage.findUnique({
+      const isNameExist = await (prisma.stoppage as any).findUnique({
         where: { name: data.name },
       });
 
@@ -186,7 +199,7 @@ const updateStoppage = async (
       }
     }
 
-    const result = await prisma.stoppage.update({
+    const result = await (prisma.stoppage as any).update({
       where: { id },
       data: {
         name: data.name,
@@ -197,6 +210,8 @@ const updateStoppage = async (
         image: data.image,
         latitude: data.latitude,
         longitude: data.longitude,
+        from: data.from,
+        to: data.to,
       },
       select: {
         id: true,
@@ -208,6 +223,8 @@ const updateStoppage = async (
         image: true,
         latitude: true,
         longitude: true,
+        from: true,
+        to: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -226,9 +243,9 @@ const updateStoppage = async (
 };
 
 // delete stoppage
-const deleteStoppage = async (id: string): Promise<any> => {
+const deleteStoppage = async (id: string): Promise<Stoppage> => {
   try {
-    const isExist = await prisma.stoppage.findUnique({
+    const isExist = await (prisma.stoppage as any).findUnique({
       where: { id },
     });
 
@@ -236,7 +253,7 @@ const deleteStoppage = async (id: string): Promise<any> => {
       throw new ApiError(httpStatus.NOT_FOUND, "Stoppage not found");
     }
 
-    const result = await prisma.stoppage.delete({
+    const result = await (prisma.stoppage as any).delete({
       where: { id },
       select: {
         id: true,
@@ -248,6 +265,8 @@ const deleteStoppage = async (id: string): Promise<any> => {
         image: true,
         latitude: true,
         longitude: true,
+        from: true,
+        to: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -265,10 +284,62 @@ const deleteStoppage = async (id: string): Promise<any> => {
   }
 };
 
+// get stoppages by from location
+const getStoppagesByFromLocation = async (
+  location: string,
+  options: IPaginationOptions,
+): Promise<IGenericResponse<Stoppage[]>> => {
+  const { page, limit, skip, sortBy, sortOrder } =
+    paginationHelpers.calculatedPagination(options);
+
+  const result = await (prisma.stoppage as any).findMany({
+    where: {
+      from: { equals: location, mode: "insensitive" },
+    },
+    skip,
+    take: limit,
+    orderBy: sortBy
+      ? { [sortBy]: sortOrder as Prisma.SortOrder }
+      : { createdAt: "desc" as Prisma.SortOrder },
+    select: {
+      id: true,
+      name: true,
+      type: true,
+      price: true,
+      duration: true,
+      description: true,
+      image: true,
+      latitude: true,
+      longitude: true,
+      from: true,
+      to: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  const total = await (prisma.stoppage as any).count({
+    where: {
+      from: { equals: location, mode: "insensitive" },
+    },
+  });
+
+  return {
+    meta: {
+      total,
+      page,
+      limit,
+    },
+    data: result,
+  };
+};
+
 export const StoppageService = {
   createStoppage,
   getAllStoppages,
   getSingleStoppage,
   updateStoppage,
   deleteStoppage,
+  getStoppagesByFromLocation,
 };
+
