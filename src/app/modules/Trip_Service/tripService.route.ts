@@ -174,7 +174,10 @@ router.delete(
 );
 
 
-router.get("/form-location/:location", TripServiceController.getTripServicesByFromLocation);
-router.get("/from-location/:location", TripServiceController.getTripServicesByFromLocation);
+router.get(
+  "/from-location/:location",
+  TripServiceController.getTripServicesByFromLocation,
+);
+
 
 export const tripServiceRoutes = router;

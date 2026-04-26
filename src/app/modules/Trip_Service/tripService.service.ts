@@ -1355,8 +1355,9 @@ const getTripServicesByFromLocation = async (
   const { page, limit, skip } = paginationHelpers.calculatedPagination(options);
 
   const where: Prisma.TripServiceWhereInput = {
-    from: { contains: location, mode: "insensitive" },
+    from: { equals: location, mode: "insensitive" },
   };
+
 
   const result = await prisma.tripService.findMany({
     where,
