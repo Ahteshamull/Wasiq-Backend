@@ -545,13 +545,14 @@ const getUserBookings = async (
     },
   });
 
-  // recent bookings for agent (last 10)
+  // recent bookings for user (last 10)
   const recentBookings = await prisma.tripServiceBooking.findMany({
     where: {
       userId,
       ...(status ? { status: status as BookingStatus } : {}),
     },
     select: {
+      id: true,
       clientName: true,
       from: true,
       to: true,
