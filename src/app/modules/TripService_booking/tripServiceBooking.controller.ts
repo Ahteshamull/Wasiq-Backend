@@ -12,6 +12,37 @@ const createTripServiceBooking = catchAsync(
     const userId = req.user?.id;
     const tripServiceId = req.params.tripServiceId;
 
+    // validate ObjectID format (24-char hex string)
+    if (!/^[0-9a-fA-F]{24}$/.test(tripServiceId)) {
+      return sendResponse(res, {
+        statusCode: httpStatus.BAD_REQUEST,
+        success: false,
+        message: "Invalid trip service ID format",
+        data: null,
+      });
+    }
+
+    const result = await TripServiceBookingService.createTripServiceBooking(
+      userId,
+      tripServiceId,
+      req.body,
+    );
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Trip service booking created successfully",
+      data: result,
+    });
+  },
+);
+
+// create booking without tripServiceId in URL (tripServiceId optional from body)
+const createBookingWithoutParam = catchAsync(
+  async (req: Request, res: Response) => {
+    const userId = req.user?.id;
+    const tripServiceId = req.body.tripServiceId || undefined;
+
     const result = await TripServiceBookingService.createTripServiceBooking(
       userId,
       tripServiceId,
@@ -111,6 +142,7 @@ const updateTripServiceBooking = catchAsync(
 
 export const TripServiceBookingController = {
   createTripServiceBooking,
+  createBookingWithoutParam,
   getMyTripServiceBookings,
   getAllTripServiceBookings,
   getSingleBooking,

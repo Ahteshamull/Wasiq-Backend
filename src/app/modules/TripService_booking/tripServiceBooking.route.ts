@@ -7,7 +7,17 @@ import validateRequest from "../../middlewares/validateRequest";
 
 const router = express.Router();
 
-// create trip service booking
+// create booking without tripServiceId in URL (tripServiceId comes from body)
+router.post(
+  "/create-booking",
+  auth(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.AGENT, UserRole.USER),
+  validateRequest(
+    TripServiceBookingValidation.createTripServiceBookingValidation,
+  ),
+  TripServiceBookingController.createBookingWithoutParam,
+);
+
+// create trip service booking (tripServiceId from URL param)
 router.post(
   "/:tripServiceId",
   auth(UserRole.USER, UserRole.AGENT, UserRole.ADMIN, UserRole.SUPER_ADMIN),

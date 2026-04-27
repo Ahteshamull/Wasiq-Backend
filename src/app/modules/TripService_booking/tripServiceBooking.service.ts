@@ -17,7 +17,7 @@ import { paginationHelpers } from "../../../helpars/paginationHelper";
 // create trip service booking
 const createTripServiceBooking = async (
   userId: string,
-  tripServiceId: string,
+  tripServiceId: string | undefined,
   payload: ICreateTripServiceBooking,
 ): Promise<TripServiceBooking> => {
   const {
@@ -53,17 +53,20 @@ const createTripServiceBooking = async (
     throw new ApiError(httpStatus.NOT_FOUND, "User not found");
   }
 
-  // trip service exists
-  const tripService = await prisma.tripService.findUnique({
-    where: { id: tripServiceId },
-  });
+  // trip service exists (only validate if tripServiceId is provided)
+  let tripService: any = null;
+  if (tripServiceId) {
+    tripService = await prisma.tripService.findUnique({
+      where: { id: tripServiceId },
+    });
 
-  if (!tripService) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Trip service not found");
-  }
+    if (!tripService) {
+      throw new ApiError(httpStatus.NOT_FOUND, "Trip service not found");
+    }
 
-  if (tripService.status !== ServiceStatus.ACTIVE) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "Trip service is not available");
+    if (tripService.status !== ServiceStatus.ACTIVE) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Trip service is not available");
+    }
   }
 
   // vehicles exist and are active
@@ -138,8 +141,8 @@ const createTripServiceBooking = async (
         user_role: findUser.role as any,
         status: BookingStatus.PENDING,
         userId,
-        tripServiceId,
-      },
+        tripServiceId: tripServiceId || undefined,
+      } as any,
     });
 
     // create booking vehicles
@@ -189,20 +192,23 @@ const createTripServiceBooking = async (
   });
 
   // Send notification to the user (Client)
+  const bookingTitle = tripService?.title || `${from} to ${to}`;
   await NotificationService.createNotification({
     receiverId: userId,
     title: "Booking Created",
-    body: `Your booking for ${tripService.title} has been created successfully.`,
+    body: `Your booking for ${bookingTitle} has been created successfully.`,
     bookingId: result.id,
   });
 
-  // Send notification to the Agent (Service Owner)
-  await NotificationService.createNotification({
-    receiverId: tripService.userId,
-    title: "New Booking Received",
-    body: `You have received a new booking for ${tripService.title} from ${findUser.fullName}.`,
-    bookingId: result.id,
-  });
+  // Send notification to the Agent (Service Owner) — only if tripService exists
+  if (tripService) {
+    await NotificationService.createNotification({
+      receiverId: tripService.userId,
+      title: "New Booking Received",
+      body: `You have received a new booking for ${tripService.title} from ${findUser.fullName}.`,
+      bookingId: result.id,
+    });
+  }
 
   return result;
 };
