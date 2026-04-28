@@ -640,6 +640,9 @@ const getUserDashboardTabInfo = async (userId: string, status?: string) => {
   const totalSpentResult = await prisma.tripServiceBooking.aggregate({
     where: {
       userId,
+      status: {
+        in: [BookingStatus.CONFIRMED, BookingStatus.COMPLETED],
+      },
     },
     _sum: {
       totalPrice: true,
@@ -666,6 +669,9 @@ const getUserDashboardTabInfo = async (userId: string, status?: string) => {
   const monthlySpentData = await prisma.tripServiceBooking.findMany({
     where: {
       userId,
+      status: {
+        in: [BookingStatus.CONFIRMED, BookingStatus.COMPLETED],
+      },
     },
     select: {
       createdAt: true,
