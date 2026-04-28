@@ -478,6 +478,7 @@ const getUserBookings = async (
   userId: string,
   timeRange?: string,
   status?: string,
+  options?: IPaginationOptions,
 ) => {
   // find agent
   const user = await prisma.user.findFirst({
@@ -501,6 +502,11 @@ const getUserBookings = async (
 
   // date range filter
   const dateRange = getDateRange(timeRange);
+
+  // pagination
+  const { page, limit, skip } = paginationHelpers.calculatedPagination(
+    options || {},
+  );
 
   // total bookings
   const totalBookings = await prisma.tripServiceBooking.count({
@@ -545,12 +551,20 @@ const getUserBookings = async (
     },
   });
 
-  // recent bookings for user (last 10)
+  // bookings where clause for list + count
+  const bookingsWhere = {
+    userId,
+    ...(status ? { status: status as BookingStatus } : {}),
+  };
+
+  // total count for pagination
+  const total = await prisma.tripServiceBooking.count({
+    where: bookingsWhere,
+  });
+
+  // recent bookings for user (paginated)
   const recentBookings = await prisma.tripServiceBooking.findMany({
-    where: {
-      userId,
-      ...(status ? { status: status as BookingStatus } : {}),
-    },
+    where: bookingsWhere,
     select: {
       id: true,
       clientName: true,
@@ -581,7 +595,8 @@ const getUserBookings = async (
     orderBy: {
       createdAt: "desc",
     },
-    take: 10,
+    skip,
+    take: limit,
   });
 
   return {
@@ -589,7 +604,12 @@ const getUserBookings = async (
     totalConfirmedBookings,
     totalCompletedBookings,
     totalEarnings: totalEarnings._sum.agent_commission || 0,
-    recentBookings,
+    meta: {
+      total,
+      page,
+      limit,
+    },
+    data: recentBookings,
     timeRange: timeRange || "ALL_TIME",
   };
 };

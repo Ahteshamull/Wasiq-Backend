@@ -63,11 +63,13 @@ const getAgentBookings = catchAsync(async (req: Request, res: Response) => {
 const getUserBookings = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id;
   const { timeRange, status } = req.query;
+  const options = pick(req.query, paginationFields);
 
   const result = await StatisticsService.getUserBookings(
     userId,
     timeRange as string,
     status as string,
+    options,
   );
 
   sendResponse(res, {
