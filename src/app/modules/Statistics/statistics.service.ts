@@ -646,12 +646,12 @@ const getUserDashboardTabInfo = async (userId: string, status?: string) => {
     },
   });
 
-  // total confirmed bookings
+  // total confirmed bookings (confirmed + completed)
   const totalConfirmedBookings = await prisma.tripServiceBooking.count({
     where: {
       userId,
       status: {
-        in: [BookingStatus.CONFIRMED],
+        in: [BookingStatus.CONFIRMED, BookingStatus.COMPLETED],
       },
     },
   });
@@ -795,13 +795,13 @@ const getUserDashboardTabInfo = async (userId: string, status?: string) => {
   return {
     totalBookings: {
       month: monthName,
-      value: currentBookings,
+      value: totalBookings,
       growthOrDown: bookingsGrowth,
     },
     totalConfirmedBookings: totalConfirmedBookings || 0,
     totalSpent: {
       month: monthName,
-      value: currentSpent,
+      value: totalSpent,
       growthOrDown: spentGrowth,
     },
     recentBookings,

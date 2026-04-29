@@ -264,8 +264,8 @@ const stripeHandleWebhook = async (event: Stripe.Event) => {
         select: { role: true, stripeAccountId: true },
       });
 
-      // transaction update
-      await prisma.$transaction([
+      // build transaction operations
+      const transactionOps = [
         prisma.payment.update({
           where: { id: payment.id },
           data: {
@@ -280,14 +280,22 @@ const stripeHandleWebhook = async (event: Stripe.Event) => {
             status: BookingStatus.CONFIRMED,
           },
         }),
+      ];
 
-        prisma.tripService.update({
-          where: { id: payment.tripServiceId! },
-          data: {
-            isService: EveryServiceStatus.BOOKED,
-          },
-        }),
-      ]);
+      // only update tripService if tripServiceId exists
+      if (payment.tripServiceId) {
+        transactionOps.push(
+          prisma.tripService.update({
+            where: { id: payment.tripServiceId },
+            data: {
+              isService: EveryServiceStatus.BOOKED,
+            },
+          }) as any,
+        );
+      }
+
+      // transaction update
+      await prisma.$transaction(transactionOps);
 
       // handle agent transfer if user is AGENT and has stripe account
       if (
