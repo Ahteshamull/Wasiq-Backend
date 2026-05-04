@@ -113,7 +113,35 @@ const updateStoppageValidation = z.object({
   }),
 });
 
+const SearchableStoppageSchema = z.object({
+  body: z.object({
+    to: z.object({
+      location: z.string(),
+      coordinates: z
+        .tuple([z.number(), z.number()])
+        .refine(
+          ([lat, lng]) => lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180,
+          {
+            message: "Invalid coordinates",
+          },
+        ),
+    }),
+    from: z.object({
+      location: z.string(),
+      coordinates: z
+        .tuple([z.number(), z.number()])
+        .refine(
+          ([lat, lng]) => lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180,
+          {
+            message: "Invalid coordinates",
+          },
+        ),
+    }),
+  }),
+});
+
 export const StoppageValidation = {
   createStoppageValidation,
   updateStoppageValidation,
+  SearchableStoppageSchema,
 };

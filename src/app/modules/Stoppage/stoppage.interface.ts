@@ -1,13 +1,12 @@
-import { Stoppage } from '@prisma/client';
+import { Stoppage } from "@prisma/client";
 
-export type IStoppage = Omit<Stoppage, 'id' | 'createdAt' | 'updatedAt'> & {
+export type IStoppage = Omit<Stoppage, "id" | "createdAt" | "updatedAt"> & {
   id?: string;
   from?: string;
   to?: string;
   createdAt?: Date;
   updatedAt?: Date;
 };
-
 
 export type IStoppageFilters = {
   searchTerm?: string;
@@ -25,3 +24,14 @@ export type IStoppageResponse = {
   };
   data: IStoppage[];
 };
+
+export interface ISearchableStoppage {
+  to: {
+    location: string;
+    coordinates: [number, number];
+  };
+  from: {
+    location: string;
+    coordinates: [number, number];
+  };
+}

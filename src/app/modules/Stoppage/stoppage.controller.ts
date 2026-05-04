@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request, RequestHandler, Response } from "express";
 import catchAsync from "../../../shared/catchAsync";
 import sendResponse from "../../../shared/sendResponse";
 import httpStatus from "http-status";
@@ -62,7 +62,10 @@ const getAllStoppages = catchAsync(async (req: Request, res: Response) => {
     "minPrice",
     "maxPrice",
   ]) as IStoppageFilters;
-  const paginationOptions = pick(req.query, paginationFields) as IPaginationOptions;
+  const paginationOptions = pick(
+    req.query,
+    paginationFields,
+  ) as IPaginationOptions;
 
   const result = await StoppageService.getAllStoppages(
     filters,
@@ -159,6 +162,31 @@ const getStoppagesByFromLocation = catchAsync(
   },
 );
 
+const searchableStoppage: RequestHandler = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await StoppageService.searchableStoppageIntoDb(req.body);
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Stoppages retrieved successfully by location",
+      data: result,
+    });
+  },
+);
+
+// get top 10 popular stoppages
+const popularStoppage: RequestHandler = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await StoppageService.popularStoppageIntoDb(req.body);
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Top 10 popular places retrieved successfully",
+      data: result,
+    });
+  },
+);
+
 export const StoppageController = {
   createStoppage,
   getAllStoppages,
@@ -166,6 +194,6 @@ export const StoppageController = {
   updateStoppage,
   deleteStoppage,
   getStoppagesByFromLocation,
+  searchableStoppage,
+  popularStoppage,
 };
-
-

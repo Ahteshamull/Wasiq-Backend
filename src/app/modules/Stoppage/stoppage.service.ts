@@ -1,12 +1,16 @@
 import httpStatus from "http-status";
-import { IStoppage, IStoppageFilters } from "./stoppage.interface";
+import {
+  ISearchableStoppage,
+  IStoppage,
+  IStoppageFilters,
+} from "./stoppage.interface";
 import ApiError from "../../../errors/ApiErrors";
 import { paginationHelpers } from "../../../helpars/paginationHelper";
 import prisma from "../../../shared/prisma";
 import { Prisma, Stoppage } from "@prisma/client";
 import { IPaginationOptions } from "../../../interfaces/paginations";
 import { IGenericResponse } from "../../../interfaces/common";
-
+import axios from "axios";
 
 // create stoppage
 const createStoppage = async (data: IStoppage): Promise<Stoppage> => {
@@ -333,6 +337,198 @@ const getStoppagesByFromLocation = async (
     data: result,
   };
 };
+const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAP_KEY;
+
+// distance function (same)
+const getDistance = (
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+) => {
+  const R = 6371e3;
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+
+  return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+};
+
+// ✅ Fetch famous places
+const getFamousPlaces = async (
+  latitude: number,
+  longitude: number,
+  radius: number = 20000,
+) => {
+  const url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json";
+
+  const params = {
+    location: `${latitude},${longitude}`,
+    radius: String(radius),
+    type: "tourist_attraction", // 🔥 important
+    key: GOOGLE_MAPS_API_KEY,
+  };
+
+  const response = await axios.get(url, { params });
+
+  const places = response.data.results || [];
+
+  return places.map((place: any) => {
+    const photoRef = place.photos?.[0]?.photo_reference;
+
+    const image = photoRef
+      ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photoRef}&key=${GOOGLE_MAPS_API_KEY}`
+      : null;
+
+    return {
+      id: place.place_id,
+      name: place.name,
+      address: place.vicinity,
+      rating: place.rating ?? 0,
+      totalRatings: place.user_ratings_total ?? 0,
+      location: {
+        lat: place.geometry?.location?.lat,
+        lng: place.geometry?.location?.lng,
+      },
+      image,
+      types: place.types,
+    };
+  });
+};
+
+const searchableStoppageIntoDb = async (
+  payload: Partial<ISearchableStoppage>,
+) => {
+  try {
+    const { from, to } = payload;
+
+    if (!from || !to) {
+      throw new Error("From and To locations are required");
+    }
+
+    const [fromLat, fromLng] = from.coordinates;
+    const [toLat, toLng] = to.coordinates;
+
+    // ✅ Get famous places from both points
+    const [fromPlaces, toPlaces] = await Promise.all([
+      getFamousPlaces(fromLat, fromLng),
+      getFamousPlaces(toLat, toLng),
+    ]);
+
+    // ✅ Merge + remove duplicates
+    const map = new Map();
+    [...fromPlaces, ...toPlaces].forEach((p) => {
+      if (!map.has(p.id)) map.set(p.id, p);
+    });
+
+    const uniquePlaces = Array.from(map.values());
+
+    // ✅ Filter along route
+    const totalDistance = getDistance(fromLat, fromLng, toLat, toLng);
+
+    const filtered = uniquePlaces.filter((p) => {
+      const lat = p.location.lat;
+      const lng = p.location.lng;
+
+      if (!lat || !lng) return false;
+
+      const d1 = getDistance(fromLat, fromLng, lat, lng);
+      const d2 = getDistance(lat, lng, toLat, toLng);
+
+      return d1 + d2 <= totalDistance * 1.2;
+    });
+
+    filtered.sort(
+      (a, b) => b.rating * b.totalRatings - a.rating * a.totalRatings,
+    );
+
+    return {
+      success: true,
+      route: {
+        from: from.location,
+        to: to.location,
+      },
+      total: filtered.length,
+      data: filtered,
+    };
+  } catch (error: any) {
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      error.message || "Failed to search famous locations",
+    );
+  }
+};
+
+// ✅ Get top 10 popular places along route
+const popularStoppageIntoDb = async (
+  payload: Partial<ISearchableStoppage>,
+) => {
+  try {
+    const { from, to } = payload;
+
+    if (!from || !to) {
+      throw new Error("From and To locations are required");
+    }
+
+    const [fromLat, fromLng] = from.coordinates;
+    const [toLat, toLng] = to.coordinates;
+
+    // ✅ Get famous places from both points
+    const [fromPlaces, toPlaces] = await Promise.all([
+      getFamousPlaces(fromLat, fromLng),
+      getFamousPlaces(toLat, toLng),
+    ]);
+
+    // ✅ Merge + remove duplicates
+    const map = new Map();
+    [...fromPlaces, ...toPlaces].forEach((p) => {
+      if (!map.has(p.id)) map.set(p.id, p);
+    });
+
+    const uniquePlaces = Array.from(map.values());
+
+    // ✅ Filter along route
+    const totalDistance = getDistance(fromLat, fromLng, toLat, toLng);
+
+    const filtered = uniquePlaces.filter((p) => {
+      const lat = p.location.lat;
+      const lng = p.location.lng;
+
+      if (!lat || !lng) return false;
+
+      const d1 = getDistance(fromLat, fromLng, lat, lng);
+      const d2 = getDistance(lat, lng, toLat, toLng);
+
+      return d1 + d2 <= totalDistance * 1.2;
+    });
+
+    // ✅ Sort by popularity and take top 10
+    filtered.sort(
+      (a, b) => b.rating * b.totalRatings - a.rating * a.totalRatings,
+    );
+
+    const top10 = filtered.slice(0, 10);
+
+    return {
+      success: true,
+      route: {
+        from: from.location,
+        to: to.location,
+      },
+      total: top10.length,
+      data: top10,
+    };
+  } catch (error: any) {
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      error.message || "Failed to search popular locations",
+    );
+  }
+};
 
 export const StoppageService = {
   createStoppage,
@@ -341,5 +537,6 @@ export const StoppageService = {
   updateStoppage,
   deleteStoppage,
   getStoppagesByFromLocation,
+  searchableStoppageIntoDb,
+  popularStoppageIntoDb,
 };
-

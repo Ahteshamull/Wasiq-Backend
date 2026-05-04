@@ -46,5 +46,15 @@ router.delete(
   auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
   StoppageController.deleteStoppage,
 );
+router.post(
+  "/search-stoppage/popular",
+  validateRequest(StoppageValidation.SearchableStoppageSchema),
+  StoppageController.popularStoppage,
+);
+router.post(
+  "/search-stoppage",
+  validateRequest(StoppageValidation.SearchableStoppageSchema),
+  StoppageController.searchableStoppage,
+);
 
 export const StoppageRoutes = router;
