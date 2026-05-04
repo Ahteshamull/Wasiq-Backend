@@ -136,10 +136,7 @@ router.get(
 );
 
 // get all trip services TRANSFER
-router.get(
-  "/transfer",
-  TripServiceController.getTransferTripServices,
-);
+router.get("/transfer", TripServiceController.getTransferTripServices);
 
 // get all trip services TRANSFER and isPopular
 router.get(
@@ -173,11 +170,9 @@ router.delete(
   TripServiceController.deleteTripService,
 );
 
-
 router.get(
   "/from-location/:location",
   TripServiceController.getTripServicesByFromLocation,
 );
-
 
 export const tripServiceRoutes = router;

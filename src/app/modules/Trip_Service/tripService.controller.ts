@@ -674,23 +674,25 @@ const getTripsByLocationForModal = catchAsync(
 );
 
 // get trip services by from location
-const getTripServicesByFromLocation = catchAsync(async (req: Request, res: Response) => {
-  const options = pick(req.query, paginationFields);
-  const location = req.params.location as string;
+const getTripServicesByFromLocation = catchAsync(
+  async (req: Request, res: Response) => {
+    const options = pick(req.query, paginationFields);
+    const location = req.params.location as string;
 
-  const result = await TripServiceService.getTripServicesByFromLocation(
-    location,
-    options
-  );
+    const result = await TripServiceService.getTripServicesByFromLocation(
+      location,
+      options,
+    );
 
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: "Trip services by location retrieved successfully",
-    data: result.data,
-    meta: result.meta,
-  });
-});
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Trip services by location retrieved successfully",
+      data: result.data,
+      meta: result.meta,
+    });
+  },
+);
 
 export const TripServiceController = {
   createTripService,
