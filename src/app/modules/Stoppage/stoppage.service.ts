@@ -464,9 +464,7 @@ const searchableStoppageIntoDb = async (
 };
 
 // ✅ Get top 10 popular places along route
-const popularStoppageIntoDb = async (
-  payload: Partial<ISearchableStoppage>,
-) => {
+const popularStoppageIntoDb = async (payload: Partial<ISearchableStoppage>) => {
   try {
     const { from, to } = payload;
 
