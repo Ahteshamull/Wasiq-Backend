@@ -413,23 +413,31 @@ const searchableStoppageIntoDb = async (
     const [fromLat, fromLng] = from.coordinates;
     const [toLat, toLng] = to.coordinates;
 
-    // ✅ Get famous places from both points
-    const [fromPlaces, toPlaces] = await Promise.all([
-      getFamousPlaces(fromLat, fromLng),
-      getFamousPlaces(toLat, toLng),
-    ]);
+    // ✅ Get famous places along the entire route
+    const totalDistance = getDistance(fromLat, fromLng, toLat, toLng);
+    const step = 30000; // Sample every 30km
+    const pointsCount = Math.max(2, Math.ceil(totalDistance / step) + 1);
+
+    const fetchPromises = [];
+    for (let i = 0; i < pointsCount; i++) {
+      const ratio = i / (pointsCount - 1);
+      const sampleLat = fromLat + ratio * (toLat - fromLat);
+      const sampleLng = fromLng + ratio * (toLng - fromLng);
+      fetchPromises.push(getFamousPlaces(sampleLat, sampleLng, 30000));
+    }
+
+    const placesArrays = await Promise.all(fetchPromises);
+    const allPlaces = placesArrays.flat();
 
     // ✅ Merge + remove duplicates
     const map = new Map();
-    [...fromPlaces, ...toPlaces].forEach((p) => {
+    allPlaces.forEach((p) => {
       if (!map.has(p.id)) map.set(p.id, p);
     });
 
     const uniquePlaces = Array.from(map.values());
 
     // ✅ Filter along route
-    const totalDistance = getDistance(fromLat, fromLng, toLat, toLng);
-
     const filtered = uniquePlaces.filter((p) => {
       const lat = p.location.lat;
       const lng = p.location.lng;
@@ -439,12 +447,28 @@ const searchableStoppageIntoDb = async (
       const d1 = getDistance(fromLat, fromLng, lat, lng);
       const d2 = getDistance(lat, lng, toLat, toLng);
 
-      return d1 + d2 <= totalDistance * 1.2;
-    });
+      // ✅ Exclude data within 7km of start and end
+      if (d1 < 7000 || d2 < 7000) return false;
 
-    filtered.sort(
-      (a, b) => b.rating * b.totalRatings - a.rating * a.totalRatings,
-    );
+      // ✅ Ensure it's between start and end
+      const dotProduct =
+        (lat - fromLat) * (toLat - fromLat) +
+        (lng - fromLng) * (toLng - fromLng);
+      const squaredDistanceAB =
+        Math.pow(toLat - fromLat, 2) + Math.pow(toLng - fromLng, 2);
+
+      const t = dotProduct / squaredDistanceAB;
+      if (t < 0 || t > 1) return false;
+
+      // ✅ Calculate perpendicular distance to the road (max 20km)
+      const nearestLat = fromLat + t * (toLat - fromLat);
+      const nearestLng = fromLng + t * (toLng - fromLng);
+      const roadDistance = getDistance(lat, lng, nearestLat, nearestLng);
+
+      if (roadDistance > 20000) return false;
+
+      return true;
+    });
 
     return {
       success: true,
@@ -475,23 +499,31 @@ const popularStoppageIntoDb = async (payload: Partial<ISearchableStoppage>) => {
     const [fromLat, fromLng] = from.coordinates;
     const [toLat, toLng] = to.coordinates;
 
-    // ✅ Get famous places from both points
-    const [fromPlaces, toPlaces] = await Promise.all([
-      getFamousPlaces(fromLat, fromLng),
-      getFamousPlaces(toLat, toLng),
-    ]);
+    // ✅ Get famous places along the entire route
+    const totalDistance = getDistance(fromLat, fromLng, toLat, toLng);
+    const step = 30000; // Sample every 30km
+    const pointsCount = Math.max(2, Math.ceil(totalDistance / step) + 1);
+
+    const fetchPromises = [];
+    for (let i = 0; i < pointsCount; i++) {
+      const ratio = i / (pointsCount - 1);
+      const sampleLat = fromLat + ratio * (toLat - fromLat);
+      const sampleLng = fromLng + ratio * (toLng - fromLng);
+      fetchPromises.push(getFamousPlaces(sampleLat, sampleLng, 30000));
+    }
+
+    const placesArrays = await Promise.all(fetchPromises);
+    const allPlaces = placesArrays.flat();
 
     // ✅ Merge + remove duplicates
     const map = new Map();
-    [...fromPlaces, ...toPlaces].forEach((p) => {
+    allPlaces.forEach((p) => {
       if (!map.has(p.id)) map.set(p.id, p);
     });
 
     const uniquePlaces = Array.from(map.values());
 
     // ✅ Filter along route
-    const totalDistance = getDistance(fromLat, fromLng, toLat, toLng);
-
     const filtered = uniquePlaces.filter((p) => {
       const lat = p.location.lat;
       const lng = p.location.lng;
@@ -501,15 +533,35 @@ const popularStoppageIntoDb = async (payload: Partial<ISearchableStoppage>) => {
       const d1 = getDistance(fromLat, fromLng, lat, lng);
       const d2 = getDistance(lat, lng, toLat, toLng);
 
-      return d1 + d2 <= totalDistance * 1.2;
+      // ✅ Exclude data within 7km of start and end
+      if (d1 < 7000 || d2 < 7000) return false;
+
+      // ✅ Ensure it's between start and end
+      const dotProduct =
+        (lat - fromLat) * (toLat - fromLat) +
+        (lng - fromLng) * (toLng - fromLng);
+      const squaredDistanceAB =
+        Math.pow(toLat - fromLat, 2) + Math.pow(toLng - fromLng, 2);
+
+      const t = dotProduct / squaredDistanceAB;
+      if (t < 0 || t > 1) return false;
+
+      // ✅ Calculate perpendicular distance to the road (max 20km)
+      const nearestLat = fromLat + t * (toLat - fromLat);
+      const nearestLng = fromLng + t * (toLng - fromLng);
+      const roadDistance = getDistance(lat, lng, nearestLat, nearestLng);
+
+      if (roadDistance > 20000) return false;
+
+      return true;
     });
 
-    // ✅ Sort by popularity and take top 10
+    // ✅ Sort by popularity and take top 6
     filtered.sort(
       (a, b) => b.rating * b.totalRatings - a.rating * a.totalRatings,
     );
 
-    const top10 = filtered.slice(0, 10);
+    const top6 = filtered.slice(0, 6);
 
     return {
       success: true,
@@ -517,8 +569,8 @@ const popularStoppageIntoDb = async (payload: Partial<ISearchableStoppage>) => {
         from: from.location,
         to: to.location,
       },
-      total: top10.length,
-      data: top10,
+      total: top6.length,
+      data: top6,
     };
   } catch (error: any) {
     throw new ApiError(
