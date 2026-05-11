@@ -57,4 +57,6 @@ router.post(
   StoppageController.searchableStoppage,
 );
 
+router.get("/single-stoppage/:id", StoppageController.getSingleStoppage);
+
 export const StoppageRoutes = router;

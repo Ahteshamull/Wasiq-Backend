@@ -18,7 +18,14 @@ const createTripServiceBookingValidation = z.object({
       "AIRPORT_TRANSFER",
       "TRANSFER",
     ]),
-    travelDate: z.string().transform((val) => new Date(val)),
+    travelDate: z
+      .string()
+      .transform((val) => new Date(val))
+      .refine((val) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return val >= today;
+      }, "Travel date cannot be in the past"),
     timeSlot: z.any().optional(),
     passengers: z.number().int().min(1, "Passengers must be at least 1"),
     luggage: z.number().int().min(0).optional(),
@@ -32,6 +39,11 @@ const createTripServiceBookingValidation = z.object({
     returnDate: z
       .string()
       .transform((val) => new Date(val))
+      .refine((val) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return val >= today;
+      }, "Return date cannot be in the past")
       .optional(),
     user_role: z.string().optional(),
     bookingVehicles: z
@@ -70,7 +82,15 @@ const updateTripServiceBookingValidation = z.object({
       "AIRPORT_TRANSFER",
       "TRANSFER",
     ]).optional(),
-    travelDate: z.string().transform((val) => new Date(val)).optional(),
+    travelDate: z
+      .string()
+      .transform((val) => new Date(val))
+      .refine((val) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return val >= today;
+      }, "Travel date cannot be in the past")
+      .optional(),
     timeSlot: z.any().optional(),
     passengers: z.number().int().min(1).optional(),
     luggage: z.number().int().min(0).optional(),
@@ -81,7 +101,15 @@ const updateTripServiceBookingValidation = z.object({
     totalPrice: z.number().min(0).optional(),
     returnPrice: z.number().optional(),
     isReturn: z.boolean().optional(),
-    returnDate: z.string().transform((val) => new Date(val)).optional(),
+    returnDate: z
+      .string()
+      .transform((val) => new Date(val))
+      .refine((val) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return val >= today;
+      }, "Return date cannot be in the past")
+      .optional(),
     status: z.enum(["PENDING", "CONFIRMED", "CANCELLED", "COMPLETED"]).optional(),
     user_role: z.string().optional(),
   }),

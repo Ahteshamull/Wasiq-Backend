@@ -147,35 +147,40 @@ const getAllStoppages = async (
 };
 
 // get single stoppage
-const getSingleStoppage = async (id: string): Promise<Stoppage> => {
-  if (!/^[0-9a-fA-F]{24}$/.test(id)) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Stoppage not found");
-  }
-  const result = await (prisma.stoppage as any).findUnique({
-    where: { id },
-    select: {
-      id: true,
-      name: true,
-      type: true,
-      price: true,
-      duration: true,
-      description: true,
-      image: true,
-      latitude: true,
-      longitude: true,
-      from: true,
-      to: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
+const getSingleStoppage = async (id: string): Promise<any> => {
+  // If it's a valid MongoDB ObjectID, check database first
+  if (/^[0-9a-fA-F]{24}$/.test(id)) {
+    const result = await (prisma.stoppage as any).findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        price: true,
+        duration: true,
+        description: true,
+        image: true,
+        latitude: true,
+        longitude: true,
+        from: true,
+        to: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
 
-  // if stoppage not found
-  if (!result) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Stoppage not found");
+    if (result) {
+      return result;
+    }
   }
 
-  return result;
+  // If not found in DB or not an ObjectID, try Google Places
+  const googlePlace = await getPlaceDetails(id);
+  if (googlePlace) {
+    return googlePlace;
+  }
+
+  throw new ApiError(httpStatus.NOT_FOUND, "Stoppage not found");
 };
 
 // update stoppage
@@ -381,11 +386,11 @@ const getFamousPlaces = async (
   const places = response.data.results || [];
 
   return places.map((place: any) => {
-    const photoRef = place.photos?.[0]?.photo_reference;
-
-    const image = photoRef
-      ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photoRef}&key=${GOOGLE_MAPS_API_KEY}`
-      : null;
+    const images =
+      place.photos?.map(
+        (photo: any) =>
+          `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${GOOGLE_MAPS_API_KEY}`,
+      ) || [];
 
     return {
       id: place.place_id,
@@ -397,7 +402,7 @@ const getFamousPlaces = async (
         lat: place.geometry?.location?.lat,
         lng: place.geometry?.location?.lng,
       },
-      image,
+      image: images,
       types: place.types,
     };
   });
@@ -473,14 +478,34 @@ const searchableStoppageIntoDb = async (
       return true;
     });
 
+    // ✅ Fetch full details for each result to get multiple images
+    const filteredWithDetails = await Promise.all(
+      filtered.map(async (place) => {
+        try {
+          const details = await getPlaceDetails(place.id);
+          return {
+            ...(details || place),
+            from: from.location,
+            to: to.location,
+          };
+        } catch (error) {
+          return {
+            ...place,
+            from: from.location,
+            to: to.location,
+          };
+        }
+      }),
+    );
+
     return {
       success: true,
       route: {
         from: from.location,
         to: to.location,
       },
-      total: filtered.length,
-      data: filtered,
+      total: filteredWithDetails.length,
+      data: filteredWithDetails,
     };
   } catch (error: any) {
     throw new ApiError(
@@ -566,20 +591,77 @@ const popularStoppageIntoDb = async (payload: Partial<ISearchableStoppage>) => {
 
     const top6 = filtered.slice(0, 6);
 
+    // ✅ Fetch full details for each top result to get multiple images
+    const top6WithDetails = await Promise.all(
+      top6.map(async (place) => {
+        try {
+          const details = await getPlaceDetails(place.id);
+          return {
+            ...(details || place),
+            from: from.location,
+            to: to.location,
+          };
+        } catch (error) {
+          return {
+            ...place,
+            from: from.location,
+            to: to.location,
+          };
+        }
+      }),
+    );
+
     return {
       success: true,
       route: {
         from: from.location,
         to: to.location,
       },
-      total: top6.length,
-      data: top6,
+      total: top6WithDetails.length,
+      data: top6WithDetails,
     };
   } catch (error: any) {
     throw new ApiError(
       httpStatus.INTERNAL_SERVER_ERROR,
       error.message || "Failed to search popular locations",
     );
+  }
+};
+
+// ✅ Fetch place details from Google
+const getPlaceDetails = async (placeId: string) => {
+  try {
+    const url = "https://maps.googleapis.com/maps/api/place/details/json";
+    const params = {
+      place_id: placeId,
+      key: GOOGLE_MAPS_API_KEY,
+    };
+
+    const response = await axios.get(url, { params });
+    const place = response.data.result;
+
+    if (!place) return null;
+
+    const images =
+      place.photos?.map(
+        (photo: any) =>
+          `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${GOOGLE_MAPS_API_KEY}`,
+      ) || [];
+
+    return {
+      id: place.place_id,
+      name: place.name,
+      type: place.types?.[0] || "Tourist Attraction",
+      price: 0,
+      description: place.formatted_address || place.vicinity,
+      image: images,
+      latitude: place.geometry?.location?.lat,
+      longitude: place.geometry?.location?.lng,
+      from: null,
+      to: null,
+    };
+  } catch (error) {
+    return null;
   }
 };
 
