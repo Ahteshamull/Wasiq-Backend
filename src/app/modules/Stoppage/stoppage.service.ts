@@ -648,12 +648,25 @@ const getPlaceDetails = async (placeId: string) => {
           `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${GOOGLE_MAPS_API_KEY}`,
       ) || [];
 
+    // Try to find a price from our database if this stoppage exists by name
+    const existingStoppage = await (prisma.stoppage as any).findUnique({
+      where: { name: place.name },
+    });
+
     return {
       id: place.place_id,
       name: place.name,
       type: place.types?.[0] || "Tourist Attraction",
-      price: 0,
-      description: place.formatted_address || place.vicinity,
+
+      price: existingStoppage ? existingStoppage.price : 0,
+      rating: place.rating ?? 0,
+      totalRatings: place.user_ratings_total ?? 0,
+      reviews: place.reviews ?? [],
+      description:
+        place.editorial_summary?.overview ||
+        existingStoppage?.description ||
+        place.formatted_address ||
+        place.vicinity,
       image: images,
       latitude: place.geometry?.location?.lat,
       longitude: place.geometry?.location?.lng,
