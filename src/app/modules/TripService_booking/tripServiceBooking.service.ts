@@ -46,6 +46,9 @@ const createTripServiceBooking = async (
   } = payload;
 
   // find user
+  if (!/^[0-9a-fA-F]{24}$/.test(userId)) {
+    throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+  }
   const findUser = await prisma.user.findUnique({
     where: { id: userId },
   });
@@ -56,6 +59,9 @@ const createTripServiceBooking = async (
   // trip service exists (only validate if tripServiceId is provided)
   let tripService: any = null;
   if (tripServiceId) {
+    if (!/^[0-9a-fA-F]{24}$/.test(tripServiceId)) {
+      throw new ApiError(httpStatus.NOT_FOUND, "Trip service not found");
+    }
     tripService = await prisma.tripService.findUnique({
       where: { id: tripServiceId },
     });
@@ -92,11 +98,17 @@ const createTripServiceBooking = async (
   let stoppages: any[] = [];
   if (bookingStoppages.length > 0) {
     const stoppageIds = bookingStoppages.map((s) => s.stoppageId);
+
+    // Filter out invalid ObjectIDs to prevent Prisma from crashing (e.g., Google Place IDs)
+    const validStoppageIds = stoppageIds.filter(
+      (id) => id && /^[0-9a-fA-F]{24}$/.test(id),
+    );
+
     stoppages = await prisma.stoppage.findMany({
-      where: { id: { in: stoppageIds } },
+      where: { id: { in: validStoppageIds } },
     });
 
-    if (stoppages.length !== stoppageIds.length) {
+    if (stoppages.length !== validStoppageIds.length) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
         "Some stoppages are not available",
@@ -311,6 +323,9 @@ const getSingleBooking = async (id: string) => {
 
 // delete trip service booking
 const deleteTripServiceBooking = async (id: string) => {
+  if (!/^[0-9a-fA-F]{24}$/.test(id)) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Booking not found");
+  }
   const findBooking = await prisma.tripServiceBooking.findUnique({
     where: { id },
   });
@@ -346,6 +361,9 @@ const updateTripServiceBooking = async (
   id: string,
   payload: Partial<TripServiceBooking>,
 ): Promise<TripServiceBooking> => {
+  if (!/^[0-9a-fA-F]{24}$/.test(id)) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Booking not found");
+  }
   const findBooking = await prisma.tripServiceBooking.findUnique({
     where: { id },
   });

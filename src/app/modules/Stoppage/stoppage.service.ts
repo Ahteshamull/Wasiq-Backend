@@ -148,6 +148,9 @@ const getAllStoppages = async (
 
 // get single stoppage
 const getSingleStoppage = async (id: string): Promise<Stoppage> => {
+  if (!/^[0-9a-fA-F]{24}$/.test(id)) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Stoppage not found");
+  }
   const result = await (prisma.stoppage as any).findUnique({
     where: { id },
     select: {
