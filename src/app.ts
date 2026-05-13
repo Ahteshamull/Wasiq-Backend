@@ -15,6 +15,9 @@ declare global {
   }
 }
 
+import { getSystemHealthInfo } from "./utils/systemInfo";
+import { generateHealthHTML } from "./utils/generateHealthHTML";
+
 const app: Application = express();
 
 // AWS / Reverse Proxy setup
@@ -52,12 +55,20 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
 // Route handler for the root endpoint
-app.get("/", (req: Request, res: Response) => {
-  res.send({
-    message:
-      "Welcome to the Wasiq API! Please refer to the documentation for available endpoints.",
-  });
+app.get("/", async (req: Request, res: Response) => {
+  const healthInfo = await getSystemHealthInfo();
+
+  // Check if client prefers JSON (e.g., monitoring tools, curl)
+  if (req.headers.accept && req.headers.accept.includes("application/json")) {
+    return res.send(healthInfo);
+  }
+
+  // Otherwise return the beautiful HTML dashboard
+  const html = generateHealthHTML(healthInfo);
+  res.setHeader("Content-Type", "text/html");
+  res.send(html);
 });
+
 
 // app.use("/uploads", express.static(path.join("/var/www/uploads")));
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads"))); // Serve static files from the "uploads" directory
