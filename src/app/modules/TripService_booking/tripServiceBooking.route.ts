@@ -1,6 +1,6 @@
 import express from "express";
 import { TripServiceBookingController } from "./tripServiceBooking.controller";
-import auth from "../../middlewares/auth";
+import auth, { optionalAuth } from "../../middlewares/auth";
 import { UserRole } from "@prisma/client";
 import { TripServiceBookingValidation } from "./tripServiceBooking.validation";
 import validateRequest from "../../middlewares/validateRequest";
@@ -10,7 +10,7 @@ const router = express.Router();
 // create booking without tripServiceId in URL (tripServiceId comes from body)
 router.post(
   "/create-booking",
-  auth(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.AGENT, UserRole.USER),
+  optionalAuth(),
   validateRequest(
     TripServiceBookingValidation.createTripServiceBookingValidation,
   ),
@@ -20,7 +20,7 @@ router.post(
 // create trip service booking (tripServiceId from URL param)
 router.post(
   "/:tripServiceId",
-  auth(UserRole.USER, UserRole.AGENT, UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  optionalAuth(),
   validateRequest(
     TripServiceBookingValidation.createTripServiceBookingValidation,
   ),

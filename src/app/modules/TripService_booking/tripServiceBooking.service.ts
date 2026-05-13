@@ -43,17 +43,46 @@ const createTripServiceBooking = async (
     returnDate,
     bookingVehicles = [],
     bookingStoppages = [],
+    guestInfo,
   } = payload;
 
-  // find user
-  if (!/^[0-9a-fA-F]{24}$/.test(userId)) {
-    throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+  // Handle User identification (Authenticated or Guest)
+  let finalUserId = userId;
+  let findUser: any = null;
+
+  if (userId && /^[0-9a-fA-F]{24}$/.test(userId)) {
+    findUser = await prisma.user.findUnique({
+      where: { id: userId },
+    });
   }
-  const findUser = await prisma.user.findUnique({
-    where: { id: userId },
-  });
+
+  // If not logged in but guest info provided, create or use existing guest user
+  if (!findUser && guestInfo) {
+    const existingUser = await prisma.user.findUnique({
+      where: { email: guestInfo.email },
+    });
+
+    if (existingUser) {
+      findUser = existingUser;
+      finalUserId = existingUser.id;
+    } else {
+      findUser = await prisma.user.create({
+        data: {
+          fullName: `${guestInfo.firstName} ${guestInfo.lastName}`,
+          email: guestInfo.email,
+          contactNumber: guestInfo.phoneNumber,
+          role: UserRole.USER,
+        },
+      });
+      finalUserId = findUser.id;
+    }
+  }
+
   if (!findUser) {
-    throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+    throw new ApiError(
+      httpStatus.UNAUTHORIZED,
+      "Please login or provide guest information to book",
+    );
   }
 
   // trip service exists (only validate if tripServiceId is provided)
@@ -71,7 +100,10 @@ const createTripServiceBooking = async (
     }
 
     if (tripService.status !== ServiceStatus.ACTIVE) {
-      throw new ApiError(httpStatus.BAD_REQUEST, "Trip service is not available");
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        "Trip service is not available",
+      );
     }
   }
 
@@ -152,7 +184,7 @@ const createTripServiceBooking = async (
         returnDate,
         user_role: findUser.role as any,
         status: BookingStatus.PENDING,
-        userId,
+        userId: finalUserId,
         tripServiceId: tripServiceId || undefined,
       } as any,
     });
@@ -206,7 +238,7 @@ const createTripServiceBooking = async (
   // Send notification to the user (Client)
   const bookingTitle = tripService?.title || `${from} to ${to}`;
   await NotificationService.createNotification({
-    receiverId: userId,
+    receiverId: finalUserId,
     title: "Booking Created",
     body: `Your booking for ${bookingTitle} has been created successfully.`,
     bookingId: result.id,
@@ -222,7 +254,25 @@ const createTripServiceBooking = async (
     });
   }
 
-  return result;
+  const finalResult = await prisma.tripServiceBooking.findUnique({
+    where: { id: result.id },
+    include: {
+      user: {
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          contactNumber: true,
+          role: true,
+        },
+      },
+      bookingVehicles: true,
+      bookingStoppages: true,
+      tripService: true,
+    },
+  });
+
+  return finalResult as any;
 };
 
 // get my trip service booking

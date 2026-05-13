@@ -31,4 +31,11 @@ export interface ICreateTripServiceBooking {
     stoppageId: string;
     quantity: number;
   }>;
+  guestInfo?: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phoneNumber: string;
+  };
 }
+
