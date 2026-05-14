@@ -11,6 +11,7 @@ import { Prisma, Stoppage } from "@prisma/client";
 import { IPaginationOptions } from "../../../interfaces/paginations";
 import { IGenericResponse } from "../../../interfaces/common";
 import axios from "axios";
+import { getPopularStoppages } from "./popularStoppages";
 
 // create stoppage
 const createStoppage = async (data: IStoppage): Promise<Stoppage> => {
@@ -370,7 +371,7 @@ const getDistance = (
 const getFamousPlaces = async (
   latitude: number,
   longitude: number,
-  radius: number = 20000,
+  radius: number = 35000,
 ) => {
   const url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json";
 
@@ -431,7 +432,7 @@ const searchableStoppageIntoDb = async (
       const ratio = i / (pointsCount - 1);
       const sampleLat = fromLat + ratio * (toLat - fromLat);
       const sampleLng = fromLng + ratio * (toLng - fromLng);
-      fetchPromises.push(getFamousPlaces(sampleLat, sampleLng, 30000));
+      fetchPromises.push(getFamousPlaces(sampleLat, sampleLng, 35000));
     }
 
     const placesArrays = await Promise.all(fetchPromises);
@@ -452,11 +453,18 @@ const searchableStoppageIntoDb = async (
 
       if (!lat || !lng) return false;
 
+      // ✅ Match with popularStoppages list
+      const popularStoppages = getPopularStoppages().map((s: any) =>
+        s.name.toLowerCase(),
+      );
+      const placeName = p.name.toLowerCase();
+      const isPopular = popularStoppages.includes(placeName);
+
+      if (!isPopular) return false;
+
       const d1 = getDistance(fromLat, fromLng, lat, lng);
       const d2 = getDistance(lat, lng, toLat, toLng);
 
-      // ✅ Exclude data within 7km of start and end
-      if (d1 < 7000 || d2 < 7000) return false;
 
       // ✅ Ensure it's between start and end
       const dotProduct =
@@ -473,7 +481,7 @@ const searchableStoppageIntoDb = async (
       const nearestLng = fromLng + t * (toLng - fromLng);
       const roadDistance = getDistance(lat, lng, nearestLat, nearestLng);
 
-      if (roadDistance > 20000) return false;
+      if (roadDistance > 35000) return false;
 
       return true;
     });
@@ -515,118 +523,125 @@ const searchableStoppageIntoDb = async (
   }
 };
 
-// ✅ Get top 10 popular places along route
-const popularStoppageIntoDb = async (payload: Partial<ISearchableStoppage>) => {
-  try {
-    const { from, to } = payload;
+// // ✅ Get top 10 popular places along route
+// const popularStoppageIntoDb = async (payload: Partial<ISearchableStoppage>) => {
+//   try {
+//     const { from, to } = payload;
 
-    if (!from || !to) {
-      throw new Error("From and To locations are required");
-    }
+//     if (!from || !to) {
+//       throw new Error("From and To locations are required");
+//     }
 
-    const [fromLat, fromLng] = from.coordinates;
-    const [toLat, toLng] = to.coordinates;
+//     const [fromLat, fromLng] = from.coordinates;
+//     const [toLat, toLng] = to.coordinates;
 
-    // ✅ Get famous places along the entire route
-    const totalDistance = getDistance(fromLat, fromLng, toLat, toLng);
-    const step = 30000; // Sample every 30km
-    const pointsCount = Math.max(2, Math.ceil(totalDistance / step) + 1);
+//     // ✅ Get famous places along the entire route
+//     const totalDistance = getDistance(fromLat, fromLng, toLat, toLng);
+//     const step = 30000; // Sample every 30km
+//     const pointsCount = Math.max(2, Math.ceil(totalDistance / step) + 1);
 
-    const fetchPromises = [];
-    for (let i = 0; i < pointsCount; i++) {
-      const ratio = i / (pointsCount - 1);
-      const sampleLat = fromLat + ratio * (toLat - fromLat);
-      const sampleLng = fromLng + ratio * (toLng - fromLng);
-      fetchPromises.push(getFamousPlaces(sampleLat, sampleLng, 30000));
-    }
+//     const fetchPromises = [];
+//     for (let i = 0; i < pointsCount; i++) {
+//       const ratio = i / (pointsCount - 1);
+//       const sampleLat = fromLat + ratio * (toLat - fromLat);
+//       const sampleLng = fromLng + ratio * (toLng - fromLng);
+//       fetchPromises.push(getFamousPlaces(sampleLat, sampleLng, 35000));
+//     }
 
-    const placesArrays = await Promise.all(fetchPromises);
-    const allPlaces = placesArrays.flat();
+//     const placesArrays = await Promise.all(fetchPromises);
+//     const allPlaces = placesArrays.flat();
 
-    // ✅ Merge + remove duplicates
-    const map = new Map();
-    allPlaces.forEach((p) => {
-      if (!map.has(p.id)) map.set(p.id, p);
-    });
+//     // ✅ Merge + remove duplicates
+//     const map = new Map();
+//     allPlaces.forEach((p) => {
+//       if (!map.has(p.id)) map.set(p.id, p);
+//     });
 
-    const uniquePlaces = Array.from(map.values());
+//     const uniquePlaces = Array.from(map.values());
 
-    // ✅ Filter along route
-    const filtered = uniquePlaces.filter((p) => {
-      const lat = p.location.lat;
-      const lng = p.location.lng;
+//     // ✅ Filter along route
+//     const filtered = uniquePlaces.filter((p) => {
+//       const lat = p.location.lat;
+//       const lng = p.location.lng;
 
-      if (!lat || !lng) return false;
+//       if (!lat || !lng) return false;
 
-      const d1 = getDistance(fromLat, fromLng, lat, lng);
-      const d2 = getDistance(lat, lng, toLat, toLng);
+//       // ✅ Match with popularStoppages list
+//       const popularStoppages = getPopularStoppages().map((s: any) =>
+//         s.name.toLowerCase(),
+//       );
+//       const placeName = p.name.toLowerCase();
+//       const isPopular = popularStoppages.includes(placeName);
 
-      // ✅ Exclude data within 7km of start and end
-      if (d1 < 7000 || d2 < 7000) return false;
+//       if (!isPopular) return false;
 
-      // ✅ Ensure it's between start and end
-      const dotProduct =
-        (lat - fromLat) * (toLat - fromLat) +
-        (lng - fromLng) * (toLng - fromLng);
-      const squaredDistanceAB =
-        Math.pow(toLat - fromLat, 2) + Math.pow(toLng - fromLng, 2);
+//       const d1 = getDistance(fromLat, fromLng, lat, lng);
+//       const d2 = getDistance(lat, lng, toLat, toLng);
 
-      const t = dotProduct / squaredDistanceAB;
-      if (t < 0 || t > 1) return false;
 
-      // ✅ Calculate perpendicular distance to the road (max 20km)
-      const nearestLat = fromLat + t * (toLat - fromLat);
-      const nearestLng = fromLng + t * (toLng - fromLng);
-      const roadDistance = getDistance(lat, lng, nearestLat, nearestLng);
+//       // ✅ Ensure it's between start and end
+//       const dotProduct =
+//         (lat - fromLat) * (toLat - fromLat) +
+//         (lng - fromLng) * (toLng - fromLng);
+//       const squaredDistanceAB =
+//         Math.pow(toLat - fromLat, 2) + Math.pow(toLng - fromLng, 2);
 
-      if (roadDistance > 20000) return false;
+//       const t = dotProduct / squaredDistanceAB;
+//       if (t < 0 || t > 1) return false;
 
-      return true;
-    });
+//       // ✅ Calculate perpendicular distance to the road (max 20km)
+//       const nearestLat = fromLat + t * (toLat - fromLat);
+//       const nearestLng = fromLng + t * (toLng - fromLng);
+//       const roadDistance = getDistance(lat, lng, nearestLat, nearestLng);
 
-    // ✅ Sort by popularity and take top 6
-    filtered.sort(
-      (a, b) => b.rating * b.totalRatings - a.rating * a.totalRatings,
-    );
+//       if (roadDistance > 35000) return false;
 
-    const top6 = filtered.slice(0, 6);
+//       return true;
+//     });
 
-    // ✅ Fetch full details for each top result to get multiple images
-    const top6WithDetails = await Promise.all(
-      top6.map(async (place) => {
-        try {
-          const details = await getPlaceDetails(place.id);
-          return {
-            ...(details || place),
-            from: from.location,
-            to: to.location,
-          };
-        } catch (error) {
-          return {
-            ...place,
-            from: from.location,
-            to: to.location,
-          };
-        }
-      }),
-    );
+//     // ✅ Sort by popularity and take top 6
+//     filtered.sort(
+//       (a, b) => b.rating * b.totalRatings - a.rating * a.totalRatings,
+//     );
 
-    return {
-      success: true,
-      route: {
-        from: from.location,
-        to: to.location,
-      },
-      total: top6WithDetails.length,
-      data: top6WithDetails,
-    };
-  } catch (error: any) {
-    throw new ApiError(
-      httpStatus.INTERNAL_SERVER_ERROR,
-      error.message || "Failed to search popular locations",
-    );
-  }
-};
+//     const top6 = filtered.slice(0, 6);
+
+//     // ✅ Fetch full details for each top result to get multiple images
+//     const top6WithDetails = await Promise.all(
+//       top6.map(async (place) => {
+//         try {
+//           const details = await getPlaceDetails(place.id);
+//           return {
+//             ...(details || place),
+//             from: from.location,
+//             to: to.location,
+//           };
+//         } catch (error) {
+//           return {
+//             ...place,
+//             from: from.location,
+//             to: to.location,
+//           };
+//         }
+//       }),
+//     );
+
+//     return {
+//       success: true,
+//       route: {
+//         from: from.location,
+//         to: to.location,
+//       },
+//       total: top6WithDetails.length,
+//       data: top6WithDetails,
+//     };
+//   } catch (error: any) {
+//     throw new ApiError(
+//       httpStatus.INTERNAL_SERVER_ERROR,
+//       error.message || "Failed to search popular locations",
+//     );
+//   }
+// };
 
 // ✅ Fetch place details from Google
 const getPlaceDetails = async (placeId: string) => {
@@ -686,5 +701,5 @@ export const StoppageService = {
   deleteStoppage,
   getStoppagesByFromLocation,
   searchableStoppageIntoDb,
-  popularStoppageIntoDb,
+  // popularStoppageIntoDb,
 };

@@ -174,18 +174,18 @@ const searchableStoppage: RequestHandler = catchAsync(
   },
 );
 
-// get top 10 popular stoppages
-const popularStoppage: RequestHandler = catchAsync(
-  async (req: Request, res: Response) => {
-    const result = await StoppageService.popularStoppageIntoDb(req.body);
-    sendResponse(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: "Top 10 popular places retrieved successfully",
-      data: result,
-    });
-  },
-);
+// // get top 10 popular stoppages
+// const popularStoppage: RequestHandler = catchAsync(
+//   async (req: Request, res: Response) => {
+//     const result = await StoppageService.popularStoppageIntoDb(req.body);
+//     sendResponse(res, {
+//       statusCode: httpStatus.OK,
+//       success: true,
+//       message: "Top 10 popular places retrieved successfully",
+//       data: result,
+//     });
+//   },
+// );
 
 export const StoppageController = {
   createStoppage,
@@ -195,5 +195,5 @@ export const StoppageController = {
   deleteStoppage,
   getStoppagesByFromLocation,
   searchableStoppage,
-  popularStoppage,
+  // popularStoppage,
 };
