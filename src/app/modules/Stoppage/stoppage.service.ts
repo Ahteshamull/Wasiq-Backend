@@ -446,25 +446,43 @@ const searchableStoppageIntoDb = async (
 
     const uniquePlaces = Array.from(map.values());
 
+    // Prepare popular stoppages map for level lookup and normalization
+    const normalizeName = (str: string) =>
+      str
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "") // Remove accents
+        .replace(/[’'′]/g, "'") // Standardize apostrophes
+        .trim();
+
+    const popularStoppagesList = getPopularStoppages();
+    const popularStoppagesMap = new Map(
+      popularStoppagesList.map((s: any) => [normalizeName(s.name), s.level]),
+    );
+
     // ✅ Filter along route
-    const filtered = uniquePlaces.filter((p) => {
+    const filtered = uniquePlaces.filter((p: any) => {
       const lat = p.location.lat;
       const lng = p.location.lng;
 
       if (!lat || !lng) return false;
 
-      // ✅ Match with popularStoppages list
-      const popularStoppages = getPopularStoppages().map((s: any) =>
-        s.name.toLowerCase(),
+      // ✅ Exclude ferry terminals
+      const isFerry = p.types?.some((type: string) =>
+        type.toLowerCase().includes("ferry"),
       );
-      const placeName = p.name.toLowerCase();
-      const isPopular = popularStoppages.includes(placeName);
+      if (isFerry) return false;
 
-      if (!isPopular) return false;
+      // ✅ Match with popularStoppages list and get level
+      const placeNameNormalized = normalizeName(p.name);
+      const level = popularStoppagesMap.get(placeNameNormalized);
+
+      if (level === undefined) return false;
+
+      p.level = level; // Inject level into the place object for sorting
 
       const d1 = getDistance(fromLat, fromLng, lat, lng);
       const d2 = getDistance(lat, lng, toLat, toLng);
-
 
       // ✅ Ensure it's between start and end
       const dotProduct =
@@ -476,7 +494,7 @@ const searchableStoppageIntoDb = async (
       const t = dotProduct / squaredDistanceAB;
       if (t < 0 || t > 1) return false;
 
-      // ✅ Calculate perpendicular distance to the road (max 20km)
+      // ✅ Calculate perpendicular distance to the road (max 35km for popular spots)
       const nearestLat = fromLat + t * (toLat - fromLat);
       const nearestLng = fromLng + t * (toLng - fromLng);
       const roadDistance = getDistance(lat, lng, nearestLat, nearestLng);
@@ -486,13 +504,26 @@ const searchableStoppageIntoDb = async (
       return true;
     });
 
+    // ✅ Selection logic: Prioritize Level 1, then fill up to 8 with Levels 2, 3, 4
+    filtered.sort((a: any, b: any) => {
+      if (a.level !== b.level) {
+        return a.level - b.level;
+      }
+      // If same level, sort by popularity (rating * totalRatings)
+      return (b.rating || 0) * (b.totalRatings || 0) - (a.rating || 0) * (a.totalRatings || 0);
+    });
+
+    // Limit to max 8 stops
+    const top8Stoppages = filtered.slice(0, 8);
+
     // ✅ Fetch full details for each result to get multiple images
     const filteredWithDetails = await Promise.all(
-      filtered.map(async (place) => {
+      top8Stoppages.map(async (place: any) => {
         try {
           const details = await getPlaceDetails(place.id);
           return {
             ...(details || place),
+            level: place.level, // preserve level in response
             from: from.location,
             to: to.location,
           };
