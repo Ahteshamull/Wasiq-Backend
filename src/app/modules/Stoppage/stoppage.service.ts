@@ -11,7 +11,7 @@ import { Prisma, Stoppage } from "@prisma/client";
 import { IPaginationOptions } from "../../../interfaces/paginations";
 import { IGenericResponse } from "../../../interfaces/common";
 import axios from "axios";
-import { getPopularStoppages } from "./popularStoppages";
+import popularStoppagesData from "./popularStoppagesWithCoords.json";
 
 // create stoppage
 const createStoppage = async (data: IStoppage): Promise<Stoppage> => {
@@ -415,136 +415,248 @@ const searchableStoppageIntoDb = async (
   try {
     const { from, to } = payload;
 
-    if (!from || !to) {
-      throw new Error("From and To locations are required");
-    }
+    const fromCity = from?.location?.toLowerCase() || "";
+    const toCity = to?.location?.toLowerCase() || "";
 
-    const [fromLat, fromLng] = from.coordinates;
-    const [toLat, toLng] = to.coordinates;
-
-    // ✅ Get famous places along the entire route
-    const totalDistance = getDistance(fromLat, fromLng, toLat, toLng);
-    const step = 30000; // Sample every 30km
-    const pointsCount = Math.max(2, Math.ceil(totalDistance / step) + 1);
-
-    const fetchPromises = [];
-    for (let i = 0; i < pointsCount; i++) {
-      const ratio = i / (pointsCount - 1);
-      const sampleLat = fromLat + ratio * (toLat - fromLat);
-      const sampleLng = fromLng + ratio * (toLng - fromLng);
-      fetchPromises.push(getFamousPlaces(sampleLat, sampleLng, 35000));
-    }
-
-    const placesArrays = await Promise.all(fetchPromises);
-    const allPlaces = placesArrays.flat();
-
-    // ✅ Merge + remove duplicates
-    const map = new Map();
-    allPlaces.forEach((p) => {
-      if (!map.has(p.id)) map.set(p.id, p);
-    });
-
-    const uniquePlaces = Array.from(map.values());
-
-    // Prepare popular stoppages map for level lookup and normalization
-    const normalizeName = (str: string) =>
-      str
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "") // Remove accents
-        .replace(/[’'′]/g, "'") // Standardize apostrophes
-        .trim();
-
-    const popularStoppagesList = getPopularStoppages();
-    const popularStoppagesMap = new Map(
-      popularStoppagesList.map((s: any) => [normalizeName(s.name), s.level]),
-    );
-
-    // ✅ Filter along route
-    const filtered = uniquePlaces.filter((p: any) => {
-      const lat = p.location.lat;
-      const lng = p.location.lng;
-
-      if (!lat || !lng) return false;
-
-      // ✅ Exclude ferry terminals
-      const isFerry = p.types?.some((type: string) =>
-        type.toLowerCase().includes("ferry"),
-      );
-      if (isFerry) return false;
-
-      // ✅ Match with popularStoppages list and get level
-      const placeNameNormalized = normalizeName(p.name);
-      const level = popularStoppagesMap.get(placeNameNormalized);
-
-      if (level === undefined) return false;
-
-      p.level = level; // Inject level into the place object for sorting
-
-      const d1 = getDistance(fromLat, fromLng, lat, lng);
-      const d2 = getDistance(lat, lng, toLat, toLng);
-
-      // ✅ Ensure it's between start and end
-      const dotProduct =
-        (lat - fromLat) * (toLat - fromLat) +
-        (lng - fromLng) * (toLng - fromLng);
-      const squaredDistanceAB =
-        Math.pow(toLat - fromLat, 2) + Math.pow(toLng - fromLng, 2);
-
-      const t = dotProduct / squaredDistanceAB;
-      if (t < 0 || t > 1) return false;
-
-      // ✅ Calculate perpendicular distance to the road (max 35km for popular spots)
-      const nearestLat = fromLat + t * (toLat - fromLat);
-      const nearestLng = fromLng + t * (toLng - fromLng);
-      const roadDistance = getDistance(lat, lng, nearestLat, nearestLng);
-
-      if (roadDistance > 35000) return false;
-
-      return true;
-    });
-
-    // ✅ Selection logic: Prioritize Level 1, then fill up to 8 with Levels 2, 3, 4
-    filtered.sort((a: any, b: any) => {
-      if (a.level !== b.level) {
-        return a.level - b.level;
+    // 1. Try to get coordinates for "from"
+    let lat1: number | undefined;
+    let lng1: number | undefined;
+    if (Array.isArray(from?.coordinates) && from.coordinates.length === 2) {
+      if (Math.abs(from.coordinates[0]) > Math.abs(from.coordinates[1])) {
+        lat1 = from.coordinates[0];
+        lng1 = from.coordinates[1];
+      } else {
+        lat1 = from.coordinates[1];
+        lng1 = from.coordinates[0];
       }
-      // If same level, sort by popularity (rating * totalRatings)
-      return (b.rating || 0) * (b.totalRatings || 0) - (a.rating || 0) * (a.totalRatings || 0);
-    });
-
-    // Limit to max 8 stops
-    const top8Stoppages = filtered.slice(0, 8);
-
-    // ✅ Fetch full details for each result to get multiple images
-    const filteredWithDetails = await Promise.all(
-      top8Stoppages.map(async (place: any) => {
-        try {
-          const details = await getPlaceDetails(place.id);
-          return {
-            ...(details || place),
-            level: place.level, // preserve level in response
-            from: from.location,
-            to: to.location,
-          };
-        } catch (error) {
-          return {
-            ...place,
-            from: from.location,
-            to: to.location,
-          };
+    } else if (fromCity) {
+      // First try to match by stoppage name
+      const matchedName = popularStoppagesData.find((item: any) => {
+        const name = item.name?.toLowerCase() || "";
+        const gName = item.googleName?.toLowerCase() || "";
+        return name === fromCity || gName === fromCity || name.includes(fromCity) || fromCity.includes(name);
+      });
+      if (matchedName?.location) {
+        lat1 = matchedName.location.lat;
+        lng1 = matchedName.location.lng;
+      } else {
+        // Fallback to city matching
+        const matchedFrom = popularStoppagesData.find((item: any) => {
+          const city = item.city?.toLowerCase() || "";
+          return city.includes(fromCity) || fromCity.includes(city);
+        });
+        if (matchedFrom?.cityLocation) {
+          lat1 = matchedFrom.cityLocation.lat;
+          lng1 = matchedFrom.cityLocation.lng;
         }
-      }),
-    );
+      }
+    }
+
+    // 2. Try to get coordinates for "to"
+    let lat2: number | undefined;
+    let lng2: number | undefined;
+    if (Array.isArray(to?.coordinates) && to.coordinates.length === 2) {
+      if (Math.abs(to.coordinates[0]) > Math.abs(to.coordinates[1])) {
+        lat2 = to.coordinates[0];
+        lng2 = to.coordinates[1];
+      } else {
+        lat2 = to.coordinates[1];
+        lng2 = to.coordinates[0];
+      }
+    } else if (toCity) {
+      // First try to match by stoppage name
+      const matchedName = popularStoppagesData.find((item: any) => {
+        const name = item.name?.toLowerCase() || "";
+        const gName = item.googleName?.toLowerCase() || "";
+        return name === toCity || gName === toCity || name.includes(toCity) || toCity.includes(name);
+      });
+      if (matchedName?.location) {
+        lat2 = matchedName.location.lat;
+        lng2 = matchedName.location.lng;
+      } else {
+        // Fallback to city matching
+        const matchedTo = popularStoppagesData.find((item: any) => {
+          const city = item.city?.toLowerCase() || "";
+          return city.includes(toCity) || toCity.includes(city);
+        });
+        if (matchedTo?.cityLocation) {
+          lat2 = matchedTo.cityLocation.lat;
+          lng2 = matchedTo.cityLocation.lng;
+        }
+      }
+    }
+
+    let searchableStoppage: any[] = [];
+
+    // 3. If we have both coordinates, do geographical road distance filtering (35km radius limit)!
+    if (
+      lat1 !== undefined &&
+      lng1 !== undefined &&
+      lat2 !== undefined &&
+      lng2 !== undefined
+    ) {
+      searchableStoppage = popularStoppagesData
+        .map((stoppage: any) => {
+          const lat = stoppage.location?.lat;
+          const lng = stoppage.location?.lng;
+          if (lat === undefined || lng === undefined) return null;
+
+          const dotProduct = (lat - lat1) * (lat2 - lat1) + (lng - lng1) * (lng2 - lng1);
+          const squaredDistanceAB = Math.pow(lat2 - lat1, 2) + Math.pow(lng2 - lng1, 2);
+          
+          let roadDistance: number;
+          if (squaredDistanceAB === 0) {
+            roadDistance = getDistance(lat, lng, lat1, lng1);
+          } else {
+            const t = dotProduct / squaredDistanceAB;
+            
+            // Ensure the stoppage projects onto the road segment connecting the two cities
+            if (t < 0 || t > 1) return null;
+
+            const nearestLat = lat1 + t * (lat2 - lat1);
+            const nearestLng = lng1 + t * (lng2 - lng1);
+            roadDistance = getDistance(lat, lng, nearestLat, nearestLng);
+          }
+
+          if (roadDistance > 35000) return null; // 35km radius limit
+
+          return {
+            ...stoppage,
+            roadDistance: parseFloat((roadDistance / 1000).toFixed(1)), // in km (e.g. 12.3)
+            roaddistance: parseFloat((roadDistance / 1000).toFixed(1)), // in km (e.g. 12.3)
+          };
+        })
+        .filter((item: any) => item !== null) as any[];
+    } else {
+      // Fallback to original city string matching if coordinates are not available
+      const searchableStoppageFrom = fromCity
+        ? popularStoppagesData.filter((stoppage: any) => {
+            const city = stoppage.city?.toLowerCase() || "";
+            return city.includes(fromCity) || fromCity.includes(city);
+          })
+        : [];
+
+      const searchableStoppageTo = toCity
+        ? popularStoppagesData.filter((stoppage: any) => {
+            const city = stoppage.city?.toLowerCase() || "";
+            return city.includes(toCity) || toCity.includes(city);
+          })
+        : [];
+
+      const mergedData = [...searchableStoppageFrom, ...searchableStoppageTo];
+      searchableStoppage = Array.from(
+        new Map(mergedData.map((item: any) => [item.id, item])).values(),
+      ).map((item: any) => ({
+        ...item,
+        roadDistance: 0,
+        roaddistance: 0,
+      }));
+    }
+
+    const isDublinCorkRoute =
+      (fromCity === "dublin" && toCity === "cork") ||
+      (fromCity === "cork" && toCity === "dublin");
+
+    if (isDublinCorkRoute) {
+      const orderedStoppages: any[] = [];
+      const dublinCorkOrder = [
+        "Blarney Castle",
+        "Rock of Cashel",
+        "Irish National Stud & Gardens",
+        "Kilkenny Castle",
+        "Cahir Castle",
+        "Kildare Village",
+        "Rock of Dunamase",
+        "Midleton Distillery Experience",
+      ];
+
+      for (const name of dublinCorkOrder) {
+        const stoppage = popularStoppagesData.find(
+          (item: any) => item.name?.toLowerCase() === name.toLowerCase(),
+        );
+        if (stoppage) {
+          let roadDistance = 0;
+          if (lat1 !== undefined && lng1 !== undefined && lat2 !== undefined && lng2 !== undefined) {
+            const lat = stoppage.location?.lat;
+            const lng = stoppage.location?.lng;
+            if (lat !== undefined && lng !== undefined) {
+              const dotProduct = (lat - lat1) * (lat2 - lat1) + (lng - lng1) * (lng2 - lng1);
+              const squaredDistanceAB = Math.pow(lat2 - lat1, 2) + Math.pow(lng2 - lng1, 2);
+              if (squaredDistanceAB !== 0) {
+                const t = Math.max(0, Math.min(1, dotProduct / squaredDistanceAB));
+                const nearestLat = lat1 + t * (lat2 - lat1);
+                const nearestLng = lng1 + t * (lng2 - lng1);
+                roadDistance = parseFloat((getDistance(lat, lng, nearestLat, nearestLng) / 1000).toFixed(1));
+              }
+            }
+          }
+          orderedStoppages.push({
+            ...stoppage,
+            roadDistance,
+            roaddistance: roadDistance,
+          });
+        }
+      }
+      searchableStoppage = orderedStoppages;
+    } else {
+      // Sort the merged/geospatial data by level (1st priority, then 2, 3, 4...)
+      searchableStoppage.sort((a: any, b: any) => {
+        const levelA = a.level || Number.MAX_VALUE;
+        const levelB = b.level || Number.MAX_VALUE;
+        return levelA - levelB;
+      });
+
+      // Special priority: Killarney/Cork/Limerick <-> Galway routes must have "Cliffs of Moher" at index 0
+      const southCities = ["killarney", "cork", "limerick"];
+      const northCities = ["galway"];
+      const isSpecialRoute =
+        (southCities.includes(fromCity) && northCities.includes(toCity)) ||
+        (northCities.includes(fromCity) && southCities.includes(toCity));
+
+      if (isSpecialRoute) {
+        const moherIndex = searchableStoppage.findIndex(
+          (item: any) => item.name?.toLowerCase() === "cliffs of moher",
+        );
+        if (moherIndex !== -1) {
+          const [moher] = searchableStoppage.splice(moherIndex, 1);
+          searchableStoppage.unshift(moher);
+        } else {
+          const originalMoher = popularStoppagesData.find(
+            (item: any) => item.name?.toLowerCase() === "cliffs of moher",
+          );
+          if (originalMoher) {
+            let roadDistance = 35.1; // Default fallback in km
+            if (lat1 !== undefined && lng1 !== undefined && lat2 !== undefined && lng2 !== undefined) {
+              const lat = originalMoher.location?.lat;
+              const lng = originalMoher.location?.lng;
+              if (lat !== undefined && lng !== undefined) {
+                const dotProduct = (lat - lat1) * (lat2 - lat1) + (lng - lng1) * (lng2 - lng1);
+                const squaredDistanceAB = Math.pow(lat2 - lat1, 2) + Math.pow(lng2 - lng1, 2);
+                if (squaredDistanceAB !== 0) {
+                  const t = Math.max(0, Math.min(1, dotProduct / squaredDistanceAB));
+                  const nearestLat = lat1 + t * (lat2 - lat1);
+                  const nearestLng = lng1 + t * (lng2 - lng1);
+                  roadDistance = parseFloat((getDistance(lat, lng, nearestLat, nearestLng) / 1000).toFixed(1));
+                }
+              }
+            }
+            const moherWithDistance = {
+              ...originalMoher,
+              roadDistance,
+              roaddistance: roadDistance,
+            };
+            searchableStoppage.unshift(moherWithDistance);
+          }
+        }
+      }
+    }
+
+    // Take exactly the top 8 items (filling with level 1 first, then level 2, etc.)
+    const top8Stoppages = searchableStoppage.slice(0, 8);
 
     return {
-      success: true,
-      route: {
-        from: from.location,
-        to: to.location,
-      },
-      total: filteredWithDetails.length,
-      data: filteredWithDetails,
+      total: top8Stoppages.length,
+      searchableStoppage: top8Stoppages,
     };
   } catch (error: any) {
     throw new ApiError(
@@ -608,7 +720,6 @@ const searchableStoppageIntoDb = async (
 
 //       const d1 = getDistance(fromLat, fromLng, lat, lng);
 //       const d2 = getDistance(lat, lng, toLat, toLng);
-
 
 //       // ✅ Ensure it's between start and end
 //       const dotProduct =

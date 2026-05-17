@@ -117,25 +117,11 @@ const SearchableStoppageSchema = z.object({
   body: z.object({
     to: z.object({
       location: z.string(),
-      coordinates: z
-        .tuple([z.number(), z.number()])
-        .refine(
-          ([lat, lng]) => lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180,
-          {
-            message: "Invalid coordinates",
-          },
-        ),
+      coordinates: z.array(z.number()).length(2).optional(),
     }),
     from: z.object({
       location: z.string(),
-      coordinates: z
-        .tuple([z.number(), z.number()])
-        .refine(
-          ([lat, lng]) => lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180,
-          {
-            message: "Invalid coordinates",
-          },
-        ),
+      coordinates: z.array(z.number()).length(2).optional(),
     }),
   }),
 });
