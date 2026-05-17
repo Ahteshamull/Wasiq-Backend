@@ -418,7 +418,7 @@ const searchableStoppageIntoDb = async (
     const fromCity = from?.location?.toLowerCase() || "";
     const toCity = to?.location?.toLowerCase() || "";
 
-    // 1. Try to get coordinates for "from"
+    // 1. Try to get coordi
     let lat1: number | undefined;
     let lng1: number | undefined;
     if (Array.isArray(from?.coordinates) && from.coordinates.length === 2) {
