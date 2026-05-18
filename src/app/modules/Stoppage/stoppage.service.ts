@@ -666,6 +666,60 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
       }
     }
 
+    // Force "Cliffs of Moher" if routing between Galway and Limerick, Cork, or Killarney
+    const isLimerickCorkOrKillarney = (loc: string): boolean => {
+      const normalized = (loc || "").toLowerCase();
+      return normalized.includes("limerick") || normalized.includes("cork") || normalized.includes("killarney");
+    };
+
+    const isGalway = (loc: string): boolean => {
+      const normalized = (loc || "").toLowerCase();
+      return normalized.includes("galway");
+    };
+
+    const forceCliffsOfMoher = 
+      (isLimerickCorkOrKillarney(from.location) && isGalway(to.location)) ||
+      (isGalway(from.location) && isLimerickCorkOrKillarney(to.location));
+
+    if (forceCliffsOfMoher && !matchedPlaceIds.has("ChIJ84G4C68BW0gR5sC4SJBGOig")) {
+      const cliffsItem = (popularStoppagesData as any[]).find(
+        (item) => item.id === "ChIJ84G4C68BW0gR5sC4SJBGOig"
+      );
+      if (cliffsItem) {
+        let minDistance = Infinity;
+        for (let i = 0; i < routePoints.length - 1; i++) {
+          const p1 = routePoints[i];
+          const p2 = routePoints[i + 1];
+          const dist = getDistanceToSegment(cliffsItem.location, p1, p2);
+          if (dist < minDistance) {
+            minDistance = dist;
+          }
+        }
+        if (minDistance === Infinity) {
+          minDistance = getDistance(cliffsItem.location.lat, cliffsItem.location.lng, origin.lat, origin.lng);
+        }
+        const roadDistanceKm = parseFloat((minDistance / 1000).toFixed(1));
+
+        matchedStoppages.push({
+          id: cliffsItem.id,
+          name: cliffsItem.name,
+          googleName: cliffsItem.googleName || cliffsItem.name,
+          level: cliffsItem.level ?? 1,
+          address: cliffsItem.address || "",
+          rating: cliffsItem.rating ?? 0,
+          totalRatings: cliffsItem.totalRatings ?? 0,
+          location: cliffsItem.location,
+          image: cliffsItem.image || [],
+          types: cliffsItem.types || [],
+          city: cliffsItem.city || "",
+          cityLocation: cliffsItem.cityLocation || null,
+          roadDistance: roadDistanceKm,
+          roaddistance: roadDistanceKm,
+        });
+        matchedPlaceIds.add(cliffsItem.id);
+      }
+    }
+
     // B. For any dynamically found places from Google Nearby Search, match them as backup
     for (const place of filteredStoppages) {
       if (matchedPlaceIds.has(place.id)) {
