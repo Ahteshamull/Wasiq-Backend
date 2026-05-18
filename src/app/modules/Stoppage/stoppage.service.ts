@@ -409,294 +409,256 @@ const getFamousPlaces = async (
   });
 };
 
-const searchableStoppageIntoDb = async (
-  payload: Partial<ISearchableStoppage>,
-) => {
+const getRoutePoints = async (
+  origin: { lat: number; lng: number },
+  destination: { lat: number; lng: number },
+): Promise<{ lat: number; lng: number }[]> => {
+  try {
+    const url = "https://maps.googleapis.com/maps/api/directions/json";
+    const response = await axios.get(url, {
+      params: {
+        origin: `${origin.lat},${origin.lng}`,
+        destination: `${destination.lat},${destination.lng}`,
+        key: GOOGLE_MAPS_API_KEY,
+      },
+    });
+
+    const route = response.data.routes?.[0];
+    if (!route) return [];
+
+    const points: { lat: number; lng: number }[] = [];
+    route.legs?.[0]?.steps?.forEach((step: any) => {
+      points.push({
+        lat: step.end_location.lat,
+        lng: step.end_location.lng,
+      });
+    });
+
+    return points;
+  } catch (error) {
+    console.error("Directions API error:", error);
+    return [];
+  }
+};
+
+const getDistanceToSegment = (
+  p: { lat: number; lng: number },
+  a: { lat: number; lng: number },
+  b: { lat: number; lng: number },
+): number => {
+  const R = 6371e3; // Earth radius in meters
+  const latP = (p.lat * Math.PI) / 180;
+  const lngP = (p.lng * Math.PI) / 180;
+  const latA = (a.lat * Math.PI) / 180;
+  const lngA = (a.lng * Math.PI) / 180;
+  const latB = (b.lat * Math.PI) / 180;
+  const lngB = (b.lng * Math.PI) / 180;
+
+  const xA = lngA * Math.cos((latA + latP) / 2);
+  const yA = latA;
+  const xB = lngB * Math.cos((latB + latP) / 2);
+  const yB = latB;
+  const xP = lngP * Math.cos((latP + latP) / 2);
+  const yP = latP;
+
+  const dx = xB - xA;
+  const dy = yB - yA;
+  const squaredLength = dx * dx + dy * dy;
+
+  if (squaredLength === 0) {
+    return getDistance(p.lat, p.lng, a.lat, a.lng);
+  }
+
+  let t = ((xP - xA) * dx + (yP - yA) * dy) / squaredLength;
+  t = Math.max(0, Math.min(1, t));
+
+  const nearestLat = a.lat + t * (b.lat - a.lat);
+  const nearestLng = a.lng + t * (b.lng - a.lng);
+
+  return getDistance(p.lat, p.lng, nearestLat, nearestLng);
+};
+
+const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
   try {
     const { from, to } = payload;
+    const startCoords = from.coordinates;
+    const endCoords = to.coordinates;
 
-    const fromCity = from?.location?.toLowerCase() || "";
-    const toCity = to?.location?.toLowerCase() || "";
+    const origin = { lat: startCoords[0], lng: startCoords[1] };
+    const destination = { lat: endCoords[0], lng: endCoords[1] };
 
-    // 1. Try to get coordi
-    let lat1: number | undefined;
-    let lng1: number | undefined;
-    if (Array.isArray(from?.coordinates) && from.coordinates.length === 2) {
-      if (Math.abs(from.coordinates[0]) > Math.abs(from.coordinates[1])) {
-        lat1 = from.coordinates[0];
-        lng1 = from.coordinates[1];
-      } else {
-        lat1 = from.coordinates[1];
-        lng1 = from.coordinates[0];
-      }
-    } else if (fromCity) {
-      // First try to match by stoppage name
-      const matchedName = popularStoppagesData.find((item: any) => {
-        const name = item.name?.toLowerCase() || "";
-        const gName = item.googleName?.toLowerCase() || "";
-        return (
-          name === fromCity ||
-          gName === fromCity ||
-          name.includes(fromCity) ||
-          fromCity.includes(name)
-        );
-      });
-      if (matchedName?.location) {
-        lat1 = matchedName.location.lat;
-        lng1 = matchedName.location.lng;
-      } else {
-        // Fallback to city matching
-        const matchedFrom = popularStoppagesData.find((item: any) => {
-          const city = item.city?.toLowerCase() || "";
-          return city.includes(fromCity) || fromCity.includes(city);
-        });
-        if (matchedFrom?.cityLocation) {
-          lat1 = matchedFrom.cityLocation.lat;
-          lng1 = matchedFrom.cityLocation.lng;
-        }
+    // Fetch real-time highway route points from Google Maps API
+    const routePoints = await getRoutePoints(origin, destination);
+    if (routePoints.length === 0) {
+      routePoints.push(origin, destination);
+    }
+
+    // 1. Distance-based sampling: sample a point exactly every 25km (25,000 meters) along the highway
+    const sampledPoints: { lat: number; lng: number }[] = [];
+    sampledPoints.push(origin); // Always include start origin
+
+    let lastSampledPoint = origin;
+    let accumulatedDistance = 0;
+
+    for (let i = 0; i < routePoints.length; i++) {
+      const currentPoint = routePoints[i];
+      const prevPoint = i === 0 ? origin : routePoints[i - 1];
+      accumulatedDistance += getDistance(
+        prevPoint.lat,
+        prevPoint.lng,
+        currentPoint.lat,
+        currentPoint.lng,
+      );
+
+      if (accumulatedDistance >= 35000) { // 25km distance interval
+        sampledPoints.push(currentPoint);
+        lastSampledPoint = currentPoint;
+        accumulatedDistance = 0;
       }
     }
 
-    // 2. Try to get coordinates for "to"
-    let lat2: number | undefined;
-    let lng2: number | undefined;
-    if (Array.isArray(to?.coordinates) && to.coordinates.length === 2) {
-      if (Math.abs(to.coordinates[0]) > Math.abs(to.coordinates[1])) {
-        lat2 = to.coordinates[0];
-        lng2 = to.coordinates[1];
-      } else {
-        lat2 = to.coordinates[1];
-        lng2 = to.coordinates[0];
-      }
-    } else if (toCity) {
-      // First try to match by stoppage name
-      const matchedName = popularStoppagesData.find((item: any) => {
-        const name = item.name?.toLowerCase() || "";
-        const gName = item.googleName?.toLowerCase() || "";
-        return (
-          name === toCity ||
-          gName === toCity ||
-          name.includes(toCity) ||
-          toCity.includes(name)
-        );
-      });
-      if (matchedName?.location) {
-        lat2 = matchedName.location.lat;
-        lng2 = matchedName.location.lng;
-      } else {
-        // Fallback to city matching
-        const matchedTo = popularStoppagesData.find((item: any) => {
-          const city = item.city?.toLowerCase() || "";
-          return city.includes(toCity) || toCity.includes(city);
-        });
-        if (matchedTo?.cityLocation) {
-          lat2 = matchedTo.cityLocation.lat;
-          lng2 = matchedTo.cityLocation.lng;
-        }
-      }
+    // Ensure the destination is also included if it's more than 5km away from the last sampled point
+    const distToDest = getDistance(
+      lastSampledPoint.lat,
+      lastSampledPoint.lng,
+      destination.lat,
+      destination.lng,
+    );
+    if (distToDest > 5000) {
+      sampledPoints.push(destination);
     }
 
-    let searchableStoppage: any[] = [];
+    // 2. Search nearby tourist attractions and points of interest using Google Places API (15km radius)
+    const allFoundPlacesMap = new Map<string, any>();
+    const searchTypes = ["tourist_attraction", "point_of_interest"];
 
-    // 3. If we have both coordinates, do geographical road distance filtering (35km radius limit)!
-    if (
-      lat1 !== undefined &&
-      lng1 !== undefined &&
-      lat2 !== undefined &&
-      lng2 !== undefined
-    ) {
-      searchableStoppage = popularStoppagesData
-        .map((stoppage: any) => {
-          const lat = stoppage.location?.lat;
-          const lng = stoppage.location?.lng;
-          if (lat === undefined || lng === undefined) return null;
-
-          const dotProduct =
-            (lat - lat1) * (lat2 - lat1) + (lng - lng1) * (lng2 - lng1);
-          const squaredDistanceAB =
-            Math.pow(lat2 - lat1, 2) + Math.pow(lng2 - lng1, 2);
-
-          let roadDistance: number;
-          if (squaredDistanceAB === 0) {
-            roadDistance = getDistance(lat, lng, lat1, lng1);
-          } else {
-            const t = dotProduct / squaredDistanceAB;
-
-            // Ensure the stoppage projects onto the road segment connecting the two cities
-            if (t < 0 || t > 1) return null;
-
-            const nearestLat = lat1 + t * (lat2 - lat1);
-            const nearestLng = lng1 + t * (lng2 - lng1);
-            roadDistance = getDistance(lat, lng, nearestLat, nearestLng);
-          }
-
-          if (roadDistance > 35000) return null; // 35km radius limit
-
-          return {
-            ...stoppage,
-            roadDistance: parseFloat((roadDistance / 1000).toFixed(1)), // in km (e.g. 12.3)
-            roaddistance: parseFloat((roadDistance / 1000).toFixed(1)), // in km (e.g. 12.3)
+    for (const point of sampledPoints) {
+      for (const searchType of searchTypes) {
+        try {
+          const url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json";
+          const params = {
+            location: `${point.lat},${point.lng}`,
+            radius: "35000", // Focused 35km search radius
+            type: searchType,
+            key: GOOGLE_MAPS_API_KEY,
           };
-        })
-        .filter((item: any) => item !== null) as any[];
-    } else {
-      // Fallback to original city string matching if coordinates are not available
-      const searchableStoppageFrom = fromCity
-        ? popularStoppagesData.filter((stoppage: any) => {
-            const city = stoppage.city?.toLowerCase() || "";
-            return city.includes(fromCity) || fromCity.includes(city);
-          })
-        : [];
 
-      const searchableStoppageTo = toCity
-        ? popularStoppagesData.filter((stoppage: any) => {
-            const city = stoppage.city?.toLowerCase() || "";
-            return city.includes(toCity) || toCity.includes(city);
-          })
-        : [];
+          const response = await axios.get(url, { params });
+          const places = response.data.results || [];
 
-      const mergedData = [...searchableStoppageFrom, ...searchableStoppageTo];
-      searchableStoppage = Array.from(
-        new Map(mergedData.map((item: any) => [item.id, item])).values(),
-      ).map((item: any) => ({
-        ...item,
-        roadDistance: 0,
-        roaddistance: 0,
-      }));
-    }
+          places.forEach((place: any) => {
+            if (!allFoundPlacesMap.has(place.place_id)) {
+              const images = place.photos?.map(
+                (photo: any) =>
+                  `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${GOOGLE_MAPS_API_KEY}`
+              ) || [];
 
-    const isDublinCorkRoute =
-      (fromCity === "dublin" && toCity === "cork") ||
-      (fromCity === "cork" && toCity === "dublin");
-
-    if (isDublinCorkRoute) {
-      const orderedStoppages: any[] = [];
-      const dublinCorkOrder = [
-        "Blarney Castle",
-        "Rock of Cashel",
-        "Irish National Stud & Gardens",
-        "Kilkenny Castle",
-        "Cahir Castle",
-        "Kildare Village",
-        "Rock of Dunamase",
-        "Midleton Distillery Experience",
-      ];
-
-      for (const name of dublinCorkOrder) {
-        const stoppage = popularStoppagesData.find(
-          (item: any) => item.name?.toLowerCase() === name.toLowerCase(),
-        );
-        if (stoppage) {
-          let roadDistance = 0;
-          if (
-            lat1 !== undefined &&
-            lng1 !== undefined &&
-            lat2 !== undefined &&
-            lng2 !== undefined
-          ) {
-            const lat = stoppage.location?.lat;
-            const lng = stoppage.location?.lng;
-            if (lat !== undefined && lng !== undefined) {
-              const dotProduct =
-                (lat - lat1) * (lat2 - lat1) + (lng - lng1) * (lng2 - lng1);
-              const squaredDistanceAB =
-                Math.pow(lat2 - lat1, 2) + Math.pow(lng2 - lng1, 2);
-              if (squaredDistanceAB !== 0) {
-                const t = Math.max(
-                  0,
-                  Math.min(1, dotProduct / squaredDistanceAB),
-                );
-                const nearestLat = lat1 + t * (lat2 - lat1);
-                const nearestLng = lng1 + t * (lng2 - lng1);
-                roadDistance = parseFloat(
-                  (
-                    getDistance(lat, lng, nearestLat, nearestLng) / 1000
-                  ).toFixed(1),
-                );
-              }
+              allFoundPlacesMap.set(place.place_id, {
+                id: place.place_id,
+                name: place.name,
+                address: place.vicinity || place.formatted_address,
+                rating: place.rating ?? 0,
+                totalRatings: place.user_ratings_total ?? 0,
+                location: {
+                  lat: place.geometry?.location?.lat,
+                  lng: place.geometry?.location?.lng,
+                },
+                image: images,
+                types: place.types || [],
+                roadDistance: 0,
+                roaddistance: 0,
+              });
             }
-          }
-          orderedStoppages.push({
-            ...stoppage,
-            roadDistance,
-            roaddistance: roadDistance,
           });
+        } catch (err) {
+          console.error(`Google Places API error for type ${searchType}:`, err);
         }
       }
-      searchableStoppage = orderedStoppages;
-    } else {
-      // Sort the merged/geospatial data by level (1st priority, then 2, 3, 4...)
-      searchableStoppage.sort((a: any, b: any) => {
-        const levelA = a.level || Number.MAX_VALUE;
-        const levelB = b.level || Number.MAX_VALUE;
-        return levelA - levelB;
+    }
+
+    const uniquePlaces = Array.from(allFoundPlacesMap.values());
+
+    // Calculate perpendicular road distances to highway segments
+    const finalStoppages = uniquePlaces.map((place) => {
+      let minDistance = Infinity;
+
+      for (let i = 0; i < routePoints.length - 1; i++) {
+        const p1 = routePoints[i];
+        const p2 = routePoints[i + 1];
+        const dist = getDistanceToSegment(place.location, p1, p2);
+        if (dist < minDistance) {
+          minDistance = dist;
+        }
+      }
+
+      if (minDistance === Infinity) {
+        minDistance = getDistance(place.location.lat, place.location.lng, origin.lat, origin.lng);
+      }
+
+      const roadDistanceKm = parseFloat((minDistance / 1000).toFixed(1));
+
+      return {
+        ...place,
+        roadDistance: roadDistanceKm,
+        roaddistance: roadDistanceKm,
+      };
+    });
+
+    // 3. Final proximity filter: Only keep stoppages that are within 35km of the actual highway segments
+    const filteredStoppages = finalStoppages.filter(
+      (item) => item.roadDistance <= 35.0
+    );
+
+    // Helper function to normalize names for strict matching
+    const normalizeName = (name: string): string => {
+      if (!name) return "";
+      return name
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "") // Remove spaces, apostrophes, dashes, and other non-alphanumeric chars
+        .trim();
+    };
+
+    // 4. Compare and match with popularStoppagesWithCoords.json by name or googleName
+    const matchedStoppages: any[] = [];
+
+    for (const place of filteredStoppages) {
+      const normPlaceName = normalizeName(place.name);
+
+      const match = (popularStoppagesData as any[]).find((popItem) => {
+        const normPopName = normalizeName(popItem.name);
+        const normPopGoogleName = normalizeName(popItem.googleName);
+        return (
+          normPlaceName === normPopName ||
+          normPlaceName === normPopGoogleName
+        );
       });
 
-      // Special priority: Killarney/Cork/Limerick <-> Galway routes must have "Cliffs of Moher" at index 0
-      const southCities = ["killarney", "cork", "limerick"];
-      const northCities = ["galway"];
-      const isSpecialRoute =
-        (southCities.includes(fromCity) && northCities.includes(toCity)) ||
-        (northCities.includes(fromCity) && southCities.includes(toCity));
-
-      if (isSpecialRoute) {
-        const moherIndex = searchableStoppage.findIndex(
-          (item: any) => item.name?.toLowerCase() === "cliffs of moher",
-        );
-        if (moherIndex !== -1) {
-          const [moher] = searchableStoppage.splice(moherIndex, 1);
-          searchableStoppage.unshift(moher);
-        } else {
-          const originalMoher = popularStoppagesData.find(
-            (item: any) => item.name?.toLowerCase() === "cliffs of moher",
-          );
-          if (originalMoher) {
-            let roadDistance = 35.1; // Default fallback in km
-            if (
-              lat1 !== undefined &&
-              lng1 !== undefined &&
-              lat2 !== undefined &&
-              lng2 !== undefined
-            ) {
-              const lat = originalMoher.location?.lat;
-              const lng = originalMoher.location?.lng;
-              if (lat !== undefined && lng !== undefined) {
-                const dotProduct =
-                  (lat - lat1) * (lat2 - lat1) + (lng - lng1) * (lng2 - lng1);
-                const squaredDistanceAB =
-                  Math.pow(lat2 - lat1, 2) + Math.pow(lng2 - lng1, 2);
-                if (squaredDistanceAB !== 0) {
-                  const t = Math.max(
-                    0,
-                    Math.min(1, dotProduct / squaredDistanceAB),
-                  );
-                  const nearestLat = lat1 + t * (lat2 - lat1);
-                  const nearestLng = lng1 + t * (lng2 - lng1);
-                  roadDistance = parseFloat(
-                    (
-                      getDistance(lat, lng, nearestLat, nearestLng) / 1000
-                    ).toFixed(1),
-                  );
-                }
-              }
-            }
-            const moherWithDistance = {
-              ...originalMoher,
-              roadDistance,
-              roaddistance: roadDistance,
-            };
-            searchableStoppage.unshift(moherWithDistance);
-          }
-        }
+      if (match) {
+        matchedStoppages.push({
+          id: match.id || place.id,
+          name: match.name || place.name,
+          googleName: match.googleName || place.googleName || place.name,
+          level: match.level ?? 4,
+          address: match.address || place.address,
+          rating: match.rating ?? place.rating,
+          totalRatings: match.totalRatings ?? place.totalRatings,
+          location: match.location || place.location,
+          image: match.image && match.image.length > 0 ? match.image : place.image,
+          types: match.types || place.types,
+          city: match.city || "",
+          cityLocation: match.cityLocation || null,
+          roadDistance: place.roadDistance,
+          roaddistance: place.roaddistance,
+        });
       }
     }
 
-    // Take exactly the top 8 items (filling with level 1 first, then level 2, etc.)
-    const top8Stoppages = searchableStoppage.slice(0, 8);
+    // Sort by rating descending
+    matchedStoppages.sort((a, b) => b.rating - a.rating);
 
     return {
-      total: top8Stoppages.length,
-      searchableStoppage: top8Stoppages,
+      total: matchedStoppages.length,
+      searchableStoppage: matchedStoppages,
     };
   } catch (error: any) {
     throw new ApiError(
@@ -706,6 +668,10 @@ const searchableStoppageIntoDb = async (
   }
 };
 
+
+
+
+// // ✅ Get top 10 popular places along route
 
 // ✅ Fetch place details from Google
 const getPlaceDetails = async (placeId: string) => {

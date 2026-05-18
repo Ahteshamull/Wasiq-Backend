@@ -117,11 +117,11 @@ const SearchableStoppageSchema = z.object({
   body: z.object({
     to: z.object({
       location: z.string(),
-      coordinates: z.array(z.number()).length(2).optional(),
+      coordinates: z.array(z.number()).length(2),
     }),
     from: z.object({
       location: z.string(),
-      coordinates: z.array(z.number()).length(2).optional(),
+      coordinates: z.array(z.number()).length(2),
     }),
   }),
 });
