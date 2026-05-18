@@ -434,7 +434,12 @@ const searchableStoppageIntoDb = async (
       const matchedName = popularStoppagesData.find((item: any) => {
         const name = item.name?.toLowerCase() || "";
         const gName = item.googleName?.toLowerCase() || "";
-        return name === fromCity || gName === fromCity || name.includes(fromCity) || fromCity.includes(name);
+        return (
+          name === fromCity ||
+          gName === fromCity ||
+          name.includes(fromCity) ||
+          fromCity.includes(name)
+        );
       });
       if (matchedName?.location) {
         lat1 = matchedName.location.lat;
@@ -468,7 +473,12 @@ const searchableStoppageIntoDb = async (
       const matchedName = popularStoppagesData.find((item: any) => {
         const name = item.name?.toLowerCase() || "";
         const gName = item.googleName?.toLowerCase() || "";
-        return name === toCity || gName === toCity || name.includes(toCity) || toCity.includes(name);
+        return (
+          name === toCity ||
+          gName === toCity ||
+          name.includes(toCity) ||
+          toCity.includes(name)
+        );
       });
       if (matchedName?.location) {
         lat2 = matchedName.location.lat;
@@ -501,15 +511,17 @@ const searchableStoppageIntoDb = async (
           const lng = stoppage.location?.lng;
           if (lat === undefined || lng === undefined) return null;
 
-          const dotProduct = (lat - lat1) * (lat2 - lat1) + (lng - lng1) * (lng2 - lng1);
-          const squaredDistanceAB = Math.pow(lat2 - lat1, 2) + Math.pow(lng2 - lng1, 2);
-          
+          const dotProduct =
+            (lat - lat1) * (lat2 - lat1) + (lng - lng1) * (lng2 - lng1);
+          const squaredDistanceAB =
+            Math.pow(lat2 - lat1, 2) + Math.pow(lng2 - lng1, 2);
+
           let roadDistance: number;
           if (squaredDistanceAB === 0) {
             roadDistance = getDistance(lat, lng, lat1, lng1);
           } else {
             const t = dotProduct / squaredDistanceAB;
-            
+
             // Ensure the stoppage projects onto the road segment connecting the two cities
             if (t < 0 || t > 1) return null;
 
@@ -576,17 +588,31 @@ const searchableStoppageIntoDb = async (
         );
         if (stoppage) {
           let roadDistance = 0;
-          if (lat1 !== undefined && lng1 !== undefined && lat2 !== undefined && lng2 !== undefined) {
+          if (
+            lat1 !== undefined &&
+            lng1 !== undefined &&
+            lat2 !== undefined &&
+            lng2 !== undefined
+          ) {
             const lat = stoppage.location?.lat;
             const lng = stoppage.location?.lng;
             if (lat !== undefined && lng !== undefined) {
-              const dotProduct = (lat - lat1) * (lat2 - lat1) + (lng - lng1) * (lng2 - lng1);
-              const squaredDistanceAB = Math.pow(lat2 - lat1, 2) + Math.pow(lng2 - lng1, 2);
+              const dotProduct =
+                (lat - lat1) * (lat2 - lat1) + (lng - lng1) * (lng2 - lng1);
+              const squaredDistanceAB =
+                Math.pow(lat2 - lat1, 2) + Math.pow(lng2 - lng1, 2);
               if (squaredDistanceAB !== 0) {
-                const t = Math.max(0, Math.min(1, dotProduct / squaredDistanceAB));
+                const t = Math.max(
+                  0,
+                  Math.min(1, dotProduct / squaredDistanceAB),
+                );
                 const nearestLat = lat1 + t * (lat2 - lat1);
                 const nearestLng = lng1 + t * (lng2 - lng1);
-                roadDistance = parseFloat((getDistance(lat, lng, nearestLat, nearestLng) / 1000).toFixed(1));
+                roadDistance = parseFloat(
+                  (
+                    getDistance(lat, lng, nearestLat, nearestLng) / 1000
+                  ).toFixed(1),
+                );
               }
             }
           }
@@ -626,17 +652,31 @@ const searchableStoppageIntoDb = async (
           );
           if (originalMoher) {
             let roadDistance = 35.1; // Default fallback in km
-            if (lat1 !== undefined && lng1 !== undefined && lat2 !== undefined && lng2 !== undefined) {
+            if (
+              lat1 !== undefined &&
+              lng1 !== undefined &&
+              lat2 !== undefined &&
+              lng2 !== undefined
+            ) {
               const lat = originalMoher.location?.lat;
               const lng = originalMoher.location?.lng;
               if (lat !== undefined && lng !== undefined) {
-                const dotProduct = (lat - lat1) * (lat2 - lat1) + (lng - lng1) * (lng2 - lng1);
-                const squaredDistanceAB = Math.pow(lat2 - lat1, 2) + Math.pow(lng2 - lng1, 2);
+                const dotProduct =
+                  (lat - lat1) * (lat2 - lat1) + (lng - lng1) * (lng2 - lng1);
+                const squaredDistanceAB =
+                  Math.pow(lat2 - lat1, 2) + Math.pow(lng2 - lng1, 2);
                 if (squaredDistanceAB !== 0) {
-                  const t = Math.max(0, Math.min(1, dotProduct / squaredDistanceAB));
+                  const t = Math.max(
+                    0,
+                    Math.min(1, dotProduct / squaredDistanceAB),
+                  );
                   const nearestLat = lat1 + t * (lat2 - lat1);
                   const nearestLng = lng1 + t * (lng2 - lng1);
-                  roadDistance = parseFloat((getDistance(lat, lng, nearestLat, nearestLng) / 1000).toFixed(1));
+                  roadDistance = parseFloat(
+                    (
+                      getDistance(lat, lng, nearestLat, nearestLng) / 1000
+                    ).toFixed(1),
+                  );
                 }
               }
             }
@@ -666,124 +706,6 @@ const searchableStoppageIntoDb = async (
   }
 };
 
-// // ✅ Get top 10 popular places along route
-// const popularStoppageIntoDb = async (payload: Partial<ISearchableStoppage>) => {
-//   try {
-//     const { from, to } = payload;
-
-//     if (!from || !to) {
-//       throw new Error("From and To locations are required");
-//     }
-
-//     const [fromLat, fromLng] = from.coordinates;
-//     const [toLat, toLng] = to.coordinates;
-
-//     // ✅ Get famous places along the entire route
-//     const totalDistance = getDistance(fromLat, fromLng, toLat, toLng);
-//     const step = 30000; // Sample every 30km
-//     const pointsCount = Math.max(2, Math.ceil(totalDistance / step) + 1);
-
-//     const fetchPromises = [];
-//     for (let i = 0; i < pointsCount; i++) {
-//       const ratio = i / (pointsCount - 1);
-//       const sampleLat = fromLat + ratio * (toLat - fromLat);
-//       const sampleLng = fromLng + ratio * (toLng - fromLng);
-//       fetchPromises.push(getFamousPlaces(sampleLat, sampleLng, 35000));
-//     }
-
-//     const placesArrays = await Promise.all(fetchPromises);
-//     const allPlaces = placesArrays.flat();
-
-//     // ✅ Merge + remove duplicates
-//     const map = new Map();
-//     allPlaces.forEach((p) => {
-//       if (!map.has(p.id)) map.set(p.id, p);
-//     });
-
-//     const uniquePlaces = Array.from(map.values());
-
-//     // ✅ Filter along route
-//     const filtered = uniquePlaces.filter((p) => {
-//       const lat = p.location.lat;
-//       const lng = p.location.lng;
-
-//       if (!lat || !lng) return false;
-
-//       // ✅ Match with popularStoppages list
-//       const popularStoppages = getPopularStoppages().map((s: any) =>
-//         s.name.toLowerCase(),
-//       );
-//       const placeName = p.name.toLowerCase();
-//       const isPopular = popularStoppages.includes(placeName);
-
-//       if (!isPopular) return false;
-
-//       const d1 = getDistance(fromLat, fromLng, lat, lng);
-//       const d2 = getDistance(lat, lng, toLat, toLng);
-
-//       // ✅ Ensure it's between start and end
-//       const dotProduct =
-//         (lat - fromLat) * (toLat - fromLat) +
-//         (lng - fromLng) * (toLng - fromLng);
-//       const squaredDistanceAB =
-//         Math.pow(toLat - fromLat, 2) + Math.pow(toLng - fromLng, 2);
-
-//       const t = dotProduct / squaredDistanceAB;
-//       if (t < 0 || t > 1) return false;
-
-//       // ✅ Calculate perpendicular distance to the road (max 20km)
-//       const nearestLat = fromLat + t * (toLat - fromLat);
-//       const nearestLng = fromLng + t * (toLng - fromLng);
-//       const roadDistance = getDistance(lat, lng, nearestLat, nearestLng);
-
-//       if (roadDistance > 35000) return false;
-
-//       return true;
-//     });
-
-//     // ✅ Sort by popularity and take top 6
-//     filtered.sort(
-//       (a, b) => b.rating * b.totalRatings - a.rating * a.totalRatings,
-//     );
-
-//     const top6 = filtered.slice(0, 6);
-
-//     // ✅ Fetch full details for each top result to get multiple images
-//     const top6WithDetails = await Promise.all(
-//       top6.map(async (place) => {
-//         try {
-//           const details = await getPlaceDetails(place.id);
-//           return {
-//             ...(details || place),
-//             from: from.location,
-//             to: to.location,
-//           };
-//         } catch (error) {
-//           return {
-//             ...place,
-//             from: from.location,
-//             to: to.location,
-//           };
-//         }
-//       }),
-//     );
-
-//     return {
-//       success: true,
-//       route: {
-//         from: from.location,
-//         to: to.location,
-//       },
-//       total: top6WithDetails.length,
-//       data: top6WithDetails,
-//     };
-//   } catch (error: any) {
-//     throw new ApiError(
-//       httpStatus.INTERNAL_SERVER_ERROR,
-//       error.message || "Failed to search popular locations",
-//     );
-//   }
-// };
 
 // ✅ Fetch place details from Google
 const getPlaceDetails = async (placeId: string) => {
