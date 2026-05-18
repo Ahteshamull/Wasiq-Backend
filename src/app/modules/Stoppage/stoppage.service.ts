@@ -620,8 +620,58 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
 
     // 4. Compare and match with popularStoppagesWithCoords.json by name or googleName
     const matchedStoppages: any[] = [];
+    const matchedPlaceIds = new Set<string>();
 
+    // A. Scan through all items in popularStoppagesWithCoords.json and check if they lie within 35km perpendicular distance of the highway
+    for (const popItem of popularStoppagesData as any[]) {
+      if (!popItem.location || !popItem.location.lat || !popItem.location.lng) {
+        continue;
+      }
+
+      let minDistance = Infinity;
+      for (let i = 0; i < routePoints.length - 1; i++) {
+        const p1 = routePoints[i];
+        const p2 = routePoints[i + 1];
+        const dist = getDistanceToSegment(popItem.location, p1, p2);
+        if (dist < minDistance) {
+          minDistance = dist;
+        }
+      }
+
+      if (minDistance === Infinity) {
+        minDistance = getDistance(popItem.location.lat, popItem.location.lng, origin.lat, origin.lng);
+      }
+
+      const roadDistanceKm = parseFloat((minDistance / 1000).toFixed(1));
+
+      // If the popular stoppage is within 35km perpendicular distance of the actual route, include it!
+      if (roadDistanceKm <= 35.0) {
+        matchedStoppages.push({
+          id: popItem.id,
+          name: popItem.name,
+          googleName: popItem.googleName || popItem.name,
+          level: popItem.level ?? 4,
+          address: popItem.address || "",
+          rating: popItem.rating ?? 0,
+          totalRatings: popItem.totalRatings ?? 0,
+          location: popItem.location,
+          image: popItem.image || [],
+          types: popItem.types || [],
+          city: popItem.city || "",
+          cityLocation: popItem.cityLocation || null,
+          roadDistance: roadDistanceKm,
+          roaddistance: roadDistanceKm,
+        });
+        matchedPlaceIds.add(popItem.id);
+      }
+    }
+
+    // B. For any dynamically found places from Google Nearby Search, match them as backup
     for (const place of filteredStoppages) {
+      if (matchedPlaceIds.has(place.id)) {
+        continue; // Already added from database scan
+      }
+
       const normPlaceName = normalizeName(place.name);
 
       const match = (popularStoppagesData as any[]).find((popItem) => {
@@ -633,7 +683,7 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
         );
       });
 
-      if (match) {
+      if (match && !matchedStoppages.some(item => item.id === match.id)) {
         matchedStoppages.push({
           id: match.id || place.id,
           name: match.name || place.name,
@@ -653,12 +703,20 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
       }
     }
 
-    // Sort by rating descending
-    matchedStoppages.sort((a, b) => b.rating - a.rating);
+    // Sort by level ascending (level 1 has highest priority), then by rating descending
+    matchedStoppages.sort((a, b) => {
+      if (a.level !== b.level) {
+        return a.level - b.level;
+      }
+      return b.rating - a.rating;
+    });
+
+    // Take only the top 8 popular places prioritized by level
+    const topStoppages = matchedStoppages.slice(0, 8);
 
     return {
-      total: matchedStoppages.length,
-      searchableStoppage: matchedStoppages,
+      total: topStoppages.length,
+      searchableStoppage: topStoppages,
     };
   } catch (error: any) {
     throw new ApiError(
