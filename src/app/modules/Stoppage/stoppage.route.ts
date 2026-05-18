@@ -57,6 +57,12 @@ router.post(
   StoppageController.searchableStoppage,
 );
 
+router.post(
+  "/add-extra-stoppage",
+  validateRequest(StoppageValidation.AddExtraStoppageSchema),
+  StoppageController.addExtraStoppage,
+);
+
 router.get("/single-stoppage/:id", StoppageController.getSingleStoppage);
 
 export const StoppageRoutes = router;

@@ -126,8 +126,30 @@ const SearchableStoppageSchema = z.object({
   }),
 });
 
+const AddExtraStoppageSchema = z.object({
+  body: z.object({
+    location: z.string().optional(),
+    coordinates: z.array(z.number()).length(2).optional(),
+    latitude: z.union([z.number(), z.string()]).optional(),
+    longitude: z.union([z.number(), z.string()]).optional(),
+  }).refine(
+    (data) => {
+      return (
+        (data.coordinates && data.coordinates.length === 2) ||
+        (data.latitude !== undefined && data.longitude !== undefined)
+      );
+    },
+    {
+      message:
+        "Either coordinates [latitude, longitude] or both latitude and longitude must be provided",
+    },
+  ),
+});
+
 export const StoppageValidation = {
   createStoppageValidation,
   updateStoppageValidation,
   SearchableStoppageSchema,
+  AddExtraStoppageSchema,
 };
+

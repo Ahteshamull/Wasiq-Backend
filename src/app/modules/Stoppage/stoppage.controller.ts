@@ -174,6 +174,18 @@ const searchableStoppage: RequestHandler = catchAsync(
   },
 );
 
+const addExtraStoppage: RequestHandler = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await StoppageService.addExtraStoppageIntoDb(req.body);
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Stoppages retrieved successfully by single location",
+      data: result,
+    });
+  },
+);
+
 // // get top 10 popular stoppages
 // const popularStoppage: RequestHandler = catchAsync(
 //   async (req: Request, res: Response) => {
@@ -195,5 +207,6 @@ export const StoppageController = {
   deleteStoppage,
   getStoppagesByFromLocation,
   searchableStoppage,
+  addExtraStoppage,
   // popularStoppage,
 };

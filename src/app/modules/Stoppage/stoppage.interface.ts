@@ -35,3 +35,11 @@ export interface ISearchableStoppage {
     coordinates: [number, number];
   };
 }
+
+export interface IAddExtraStoppage {
+  location?: string;
+  coordinates?: [number, number];
+  latitude?: number;
+  longitude?: number;
+}
+

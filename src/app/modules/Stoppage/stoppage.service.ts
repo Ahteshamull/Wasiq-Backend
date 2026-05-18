@@ -1,5 +1,6 @@
 import httpStatus from "http-status";
 import {
+  IAddExtraStoppage,
   ISearchableStoppage,
   IStoppage,
   IStoppageFilters,
@@ -510,7 +511,8 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
         currentPoint.lng,
       );
 
-      if (accumulatedDistance >= 35000) { // 25km distance interval
+      if (accumulatedDistance >= 35000) {
+        // 25km distance interval
         sampledPoints.push(currentPoint);
         lastSampledPoint = currentPoint;
         accumulatedDistance = 0;
@@ -535,7 +537,8 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
     for (const point of sampledPoints) {
       for (const searchType of searchTypes) {
         try {
-          const url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json";
+          const url =
+            "https://maps.googleapis.com/maps/api/place/nearbysearch/json";
           const params = {
             location: `${point.lat},${point.lng}`,
             radius: "35000", // Focused 35km search radius
@@ -548,10 +551,11 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
 
           places.forEach((place: any) => {
             if (!allFoundPlacesMap.has(place.place_id)) {
-              const images = place.photos?.map(
-                (photo: any) =>
-                  `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${GOOGLE_MAPS_API_KEY}`
-              ) || [];
+              const images =
+                place.photos?.map(
+                  (photo: any) =>
+                    `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${GOOGLE_MAPS_API_KEY}`,
+                ) || [];
 
               allFoundPlacesMap.set(place.place_id, {
                 id: place.place_id,
@@ -592,7 +596,12 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
       }
 
       if (minDistance === Infinity) {
-        minDistance = getDistance(place.location.lat, place.location.lng, origin.lat, origin.lng);
+        minDistance = getDistance(
+          place.location.lat,
+          place.location.lng,
+          origin.lat,
+          origin.lng,
+        );
       }
 
       const roadDistanceKm = parseFloat((minDistance / 1000).toFixed(1));
@@ -606,7 +615,7 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
 
     // 3. Final proximity filter: Only keep stoppages that are within 35km of the actual highway segments
     const filteredStoppages = finalStoppages.filter(
-      (item) => item.roadDistance <= 35.0
+      (item) => item.roadDistance <= 35.0,
     );
 
     // Helper function to normalize names for strict matching
@@ -639,7 +648,12 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
       }
 
       if (minDistance === Infinity) {
-        minDistance = getDistance(popItem.location.lat, popItem.location.lng, origin.lat, origin.lng);
+        minDistance = getDistance(
+          popItem.location.lat,
+          popItem.location.lng,
+          origin.lat,
+          origin.lng,
+        );
       }
 
       const roadDistanceKm = parseFloat((minDistance / 1000).toFixed(1));
@@ -669,7 +683,11 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
     // Force "Cliffs of Moher" if routing between Galway and Limerick, Cork, or Killarney
     const isLimerickCorkOrKillarney = (loc: string): boolean => {
       const normalized = (loc || "").toLowerCase();
-      return normalized.includes("limerick") || normalized.includes("cork") || normalized.includes("killarney");
+      return (
+        normalized.includes("limerick") ||
+        normalized.includes("cork") ||
+        normalized.includes("killarney")
+      );
     };
 
     const isGalway = (loc: string): boolean => {
@@ -677,13 +695,16 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
       return normalized.includes("galway");
     };
 
-    const forceCliffsOfMoher = 
+    const forceCliffsOfMoher =
       (isLimerickCorkOrKillarney(from.location) && isGalway(to.location)) ||
       (isGalway(from.location) && isLimerickCorkOrKillarney(to.location));
 
-    if (forceCliffsOfMoher && !matchedPlaceIds.has("ChIJ84G4C68BW0gR5sC4SJBGOig")) {
+    if (
+      forceCliffsOfMoher &&
+      !matchedPlaceIds.has("ChIJ84G4C68BW0gR5sC4SJBGOig")
+    ) {
       const cliffsItem = (popularStoppagesData as any[]).find(
-        (item) => item.id === "ChIJ84G4C68BW0gR5sC4SJBGOig"
+        (item) => item.id === "ChIJ84G4C68BW0gR5sC4SJBGOig",
       );
       if (cliffsItem) {
         let minDistance = Infinity;
@@ -696,7 +717,12 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
           }
         }
         if (minDistance === Infinity) {
-          minDistance = getDistance(cliffsItem.location.lat, cliffsItem.location.lng, origin.lat, origin.lng);
+          minDistance = getDistance(
+            cliffsItem.location.lat,
+            cliffsItem.location.lng,
+            origin.lat,
+            origin.lng,
+          );
         }
         const roadDistanceKm = parseFloat((minDistance / 1000).toFixed(1));
 
@@ -732,12 +758,11 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
         const normPopName = normalizeName(popItem.name);
         const normPopGoogleName = normalizeName(popItem.googleName);
         return (
-          normPlaceName === normPopName ||
-          normPlaceName === normPopGoogleName
+          normPlaceName === normPopName || normPlaceName === normPopGoogleName
         );
       });
 
-      if (match && !matchedStoppages.some(item => item.id === match.id)) {
+      if (match && !matchedStoppages.some((item) => item.id === match.id)) {
         matchedStoppages.push({
           id: match.id || place.id,
           name: match.name || place.name,
@@ -747,7 +772,8 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
           rating: match.rating ?? place.rating,
           totalRatings: match.totalRatings ?? place.totalRatings,
           location: match.location || place.location,
-          image: match.image && match.image.length > 0 ? match.image : place.image,
+          image:
+            match.image && match.image.length > 0 ? match.image : place.image,
           types: match.types || place.types,
           city: match.city || "",
           cityLocation: match.cityLocation || null,
@@ -780,7 +806,210 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
   }
 };
 
+const addExtraStoppageIntoDb = async (payload: IAddExtraStoppage) => {
+  try {
+    const { location: searchLocation, coordinates, latitude, longitude } = payload;
+    let lat: number | undefined;
+    let lng: number | undefined;
 
+    if (coordinates && coordinates.length === 2) {
+      lat = coordinates[0];
+      lng = coordinates[1];
+    } else if (latitude !== undefined && longitude !== undefined) {
+      lat = Number(latitude);
+      lng = Number(longitude);
+    }
+
+    const matchedStoppages: any[] = [];
+
+    // Helper mapping for Irish cities/counties
+    const counties = [
+      "Dublin", "Galway", "Cork", "Kerry", "Mayo", "Clare", "Limerick", "Wexford", 
+      "Kilkenny", "Carlow", "Roscommon", "Offaly", "Louth", "Tipperary", "Donegal", 
+      "Sligo", "Leitrim", "Wicklow", "Kildare", "Westmeath", "Meath", "Laois", 
+      "Waterford", "Cavan", "Monaghan", "Longford",
+      "Belfast", "Antrim", "Down", "Tyrone", "Fermanagh", "Derry", "Armagh", "Londonderry"
+    ];
+
+    const countyCoords: Record<string, { lat: number; lng: number }> = {
+      "Galway": { lat: 53.274, lng: -9.0513 },
+      "Dublin": { lat: 53.3498, lng: -6.2603 },
+      "Cork": { lat: 51.8985, lng: -8.4756 },
+      "Kerry": { lat: 52.1545, lng: -9.5667 },
+      "Mayo": { lat: 53.8517, lng: -9.2934 },
+      "Clare": { lat: 52.9045, lng: -8.9833 },
+      "Limerick": { lat: 52.6638, lng: -8.6267 },
+      "Wexford": { lat: 52.3369, lng: -6.4633 },
+      "Kilkenny": { lat: 52.6549, lng: -7.2464 },
+      "Carlow": { lat: 52.8364, lng: -6.9341 },
+      "Roscommon": { lat: 53.6276, lng: -8.1891 },
+      "Offaly": { lat: 53.2741, lng: -7.4912 },
+      "Louth": { lat: 53.9897, lng: -6.4018 },
+      "Tipperary": { lat: 52.473, lng: -8.1619 },
+      "Donegal": { lat: 54.6538, lng: -8.1102 },
+      "Sligo": { lat: 54.2766, lng: -8.4761 },
+      "Leitrim": { lat: 54.1246, lng: -8.0016 },
+      "Wicklow": { lat: 52.9808, lng: -6.0444 },
+      "Kildare": { lat: 53.1589, lng: -6.9095 },
+      "Westmeath": { lat: 53.5389, lng: -7.4611 },
+      "Meath": { lat: 53.6053, lng: -6.6712 },
+      "Laois": { lat: 53.0322, lng: -7.3005 },
+      "Belfast": { lat: 54.5973, lng: -5.9301 },
+      "Antrim": { lat: 54.7179, lng: -6.2211 },
+      "Down": { lat: 54.3287, lng: -5.7157 },
+      "Fermanagh": { lat: 54.3435, lng: -7.6321 },
+      "Tyrone": { lat: 54.6003, lng: -7.3008 },
+      "Waterford": { lat: 52.2573, lng: -7.1115 }
+    };
+
+    // 1. If a specific search location query is provided, query Google Places Text Search
+    if (searchLocation) {
+      try {
+        const url = "https://maps.googleapis.com/maps/api/place/textsearch/json";
+        const params: any = {
+          query: searchLocation,
+          key: GOOGLE_MAPS_API_KEY,
+        };
+
+        if (lat !== undefined && lng !== undefined) {
+          params.location = `${lat},${lng}`;
+          params.radius = 50000; // bias within 50km
+        }
+
+        const response = await axios.get(url, { params });
+        const places = response.data.results || [];
+
+        for (const place of places) {
+          const images =
+            place.photos?.map(
+              (photo: any) =>
+                `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${GOOGLE_MAPS_API_KEY}`,
+            ) || [];
+
+          let distanceKm = 0;
+          if (lat !== undefined && lng !== undefined && place.geometry?.location) {
+            const distance = getDistance(
+              place.geometry.location.lat,
+              place.geometry.location.lng,
+              lat,
+              lng,
+            );
+            distanceKm = parseFloat((distance / 1000).toFixed(1));
+          }
+
+          // Detect city/county from address
+          let detectedCity = "";
+          const addressString = (place.formatted_address || place.vicinity || "").toLowerCase();
+          for (const county of counties) {
+            if (addressString.includes(county.toLowerCase())) {
+              detectedCity = county;
+              break;
+            }
+          }
+
+          matchedStoppages.push({
+            id: place.place_id,
+            name: place.name,
+            googleName: place.name,
+            level: 4, // Default to level 4 for extra stoppages
+            address: place.formatted_address || place.vicinity || "",
+            rating: place.rating ?? 0,
+            totalRatings: place.user_ratings_total ?? 0,
+            location: {
+              lat: place.geometry?.location?.lat,
+              lng: place.geometry?.location?.lng,
+            },
+            image: images,
+            types: place.types || [],
+            city: detectedCity || "Ireland",
+            cityLocation: detectedCity ? (countyCoords[detectedCity] || null) : null,
+            roadDistance: distanceKm,
+            roaddistance: distanceKm,
+          });
+        }
+      } catch (err) {
+        console.error("Google Places Text Search error:", err);
+      }
+    }
+
+    // 2. If no searchLocation query but coordinates are provided, perform a Nearby Search
+    if (matchedStoppages.length === 0 && lat !== undefined && lng !== undefined) {
+      try {
+        const url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json";
+        const params = {
+          location: `${lat},${lng}`,
+          radius: "5000", // 5km search radius
+          type: "tourist_attraction",
+          key: GOOGLE_MAPS_API_KEY,
+        };
+
+        const response = await axios.get(url, { params });
+        const places = response.data.results || [];
+
+        for (const place of places) {
+          const images =
+            place.photos?.map(
+              (photo: any) =>
+                `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${GOOGLE_MAPS_API_KEY}`,
+            ) || [];
+
+          const distance = getDistance(
+            place.geometry?.location?.lat,
+            place.geometry?.location?.lng,
+            lat,
+            lng,
+          );
+          const distanceKm = parseFloat((distance / 1000).toFixed(1));
+
+          // Detect city/county from address
+          let detectedCity = "";
+          const addressString = (place.formatted_address || place.vicinity || "").toLowerCase();
+          for (const county of counties) {
+            if (addressString.includes(county.toLowerCase())) {
+              detectedCity = county;
+              break;
+            }
+          }
+
+          matchedStoppages.push({
+            id: place.place_id,
+            name: place.name,
+            googleName: place.name,
+            level: 4,
+            address: place.vicinity || place.formatted_address || "",
+            rating: place.rating ?? 0,
+            totalRatings: place.user_ratings_total ?? 0,
+            location: {
+              lat: place.geometry?.location?.lat,
+              lng: place.geometry?.location?.lng,
+            },
+            image: images,
+            types: place.types || [],
+            city: detectedCity || "Ireland",
+            cityLocation: detectedCity ? (countyCoords[detectedCity] || null) : null,
+            roadDistance: distanceKm,
+            roaddistance: distanceKm,
+          });
+        }
+      } catch (err) {
+        console.error("Google Places Nearby Search error:", err);
+      }
+    }
+
+    // Sort by road distance ascending
+    matchedStoppages.sort((a, b) => a.roadDistance - b.roadDistance);
+
+    return {
+      total: matchedStoppages.length,
+      searchableStoppage: matchedStoppages,
+    };
+  } catch (error: any) {
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      error.message || "Failed to search famous locations",
+    );
+  }
+};
 
 
 // // ✅ Get top 10 popular places along route
@@ -843,5 +1072,6 @@ export const StoppageService = {
   deleteStoppage,
   getStoppagesByFromLocation,
   searchableStoppageIntoDb,
+  addExtraStoppageIntoDb,
   // popularStoppageIntoDb,
 };
