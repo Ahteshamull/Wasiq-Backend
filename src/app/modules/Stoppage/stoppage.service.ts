@@ -680,7 +680,43 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
       }
     }
 
-    // Force "Cliffs of Moher" if routing between Galway and Limerick, Cork, or Killarney
+    // Force "Cliffs of Moher" if routing between Galway and Limerick, Cork, or Killarney,
+    // or if routing between any two locations within the specified red border region in Western/Southern Ireland.
+    const RED_BORDER_POLYGON = [
+      { lat: 53.65, lng: -10.20 }, // NW corner above Letterfrack
+      { lat: 53.62, lng: -9.30 },  // North near Cong
+      { lat: 53.58, lng: -8.70 },  // North-East near Tuam
+      { lat: 52.92, lng: -8.00 },  // East of Nenagh
+      { lat: 52.70, lng: -7.70 },  // East of Thurles
+      { lat: 52.25, lng: -7.00 },  // East of Waterford
+      { lat: 52.05, lng: -7.00 },  // Sea south-east of Tramore
+      { lat: 51.80, lng: -7.80 },  // Sea south of Youghal
+      { lat: 51.55, lng: -8.50 },  // Sea south of Kinsale
+      { lat: 51.35, lng: -9.50 },  // Sea south of Schull
+      { lat: 51.50, lng: -10.10 }, // Sea west of Beara Peninsula
+      { lat: 51.75, lng: -10.50 }, // Sea west of Waterville
+      { lat: 52.10, lng: -10.60 }, // Sea west of Dingle
+      { lat: 52.65, lng: -9.90 },  // Sea west of Kilkee/Loop Head
+      { lat: 53.45, lng: -10.20 }, // Sea west of Clifden
+    ];
+
+    const isPointInPolygon = (
+      point: { lat: number; lng: number },
+      polygon: { lat: number; lng: number }[],
+    ): boolean => {
+      const x = point.lat;
+      const y = point.lng;
+      let inside = false;
+      for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        const xi = polygon[i].lat, yi = polygon[i].lng;
+        const xj = polygon[j].lat, yj = polygon[j].lng;
+        const intersect = ((yi > y) !== (yj > y))
+            && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+      }
+      return inside;
+    };
+
     const isLimerickCorkOrKillarney = (loc: string): boolean => {
       const normalized = (loc || "").toLowerCase();
       return (
@@ -695,7 +731,11 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
       return normalized.includes("galway");
     };
 
+    const isOriginInRedBorder = isPointInPolygon(origin, RED_BORDER_POLYGON);
+    const isDestinationInRedBorder = isPointInPolygon(destination, RED_BORDER_POLYGON);
+
     const forceCliffsOfMoher =
+      (isOriginInRedBorder && isDestinationInRedBorder) ||
       (isLimerickCorkOrKillarney(from.location) && isGalway(to.location)) ||
       (isGalway(from.location) && isLimerickCorkOrKillarney(to.location));
 
