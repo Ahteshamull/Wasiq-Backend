@@ -731,13 +731,43 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
       return normalized.includes("galway");
     };
 
+    const isInGalwayRegion = (point: { lat: number; lng: number }, locationName: string): boolean => {
+      const normalized = (locationName || "").toLowerCase();
+      if (normalized.includes("galway")) {
+        return true;
+      }
+      return point.lat >= 53.0 && point.lat <= 53.7 && point.lng >= -10.3 && point.lng <= -8.0;
+    };
+
+    const isSouthWestRegion = (point: { lat: number; lng: number }, locationName: string): boolean => {
+      const normalized = (locationName || "").toLowerCase();
+      if (normalized.includes("galway") || normalized.includes("clare")) {
+        return false;
+      }
+      if (
+        normalized.includes("cork") ||
+        normalized.includes("kerry") ||
+        normalized.includes("killarney") ||
+        normalized.includes("limerick")
+      ) {
+        return true;
+      }
+      return point.lat < 52.75 && point.lng <= -7.0;
+    };
+
     const isOriginInRedBorder = isPointInPolygon(origin, RED_BORDER_POLYGON);
     const isDestinationInRedBorder = isPointInPolygon(destination, RED_BORDER_POLYGON);
 
+    const hasGalway = isInGalwayRegion(origin, from.location) || isInGalwayRegion(destination, to.location);
+    const isPureSouthWestRoute = isSouthWestRegion(origin, from.location) && isSouthWestRegion(destination, to.location);
+
     const forceCliffsOfMoher =
-      (isOriginInRedBorder && isDestinationInRedBorder) ||
-      (isLimerickCorkOrKillarney(from.location) && isGalway(to.location)) ||
-      (isGalway(from.location) && isLimerickCorkOrKillarney(to.location));
+      hasGalway &&
+      !isPureSouthWestRoute && (
+        (isOriginInRedBorder && isDestinationInRedBorder) ||
+        (isLimerickCorkOrKillarney(from.location) && isGalway(to.location)) ||
+        (isGalway(from.location) && isLimerickCorkOrKillarney(to.location))
+      );
 
     if (
       forceCliffsOfMoher &&
