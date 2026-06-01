@@ -7,8 +7,16 @@ const createFaq = async (payload: any) => {
 };
 
 // get all faq
-const getAllFaq = async () => {
-  const faq = await prisma.faq.findMany({ orderBy: { createdAt: "desc" } });
+const getAllFaq = async (query: Record<string, any>) => {
+  const { serviceType } = query;
+  const whereCondition: any = {};
+  if (serviceType) {
+    whereCondition.serviceType = serviceType;
+  }
+  const faq = await prisma.faq.findMany({
+    where: whereCondition,
+    orderBy: { createdAt: "desc" },
+  });
   return faq;
 };
 
@@ -22,19 +30,22 @@ const getSingleFaq = async (id: string) => {
 
 // update faq
 const updateFaq = async (id: string, payload: any) => {
-  const { question, answer } = payload;
-  await prisma.faq.update({
+  const { question, answer, serviceType } = payload;
+  const faq = await prisma.faq.update({
     where: { id },
     data: {
       question,
       answer,
-    },
+      serviceType,
+    } as any,
   });
+  return faq;
 };
 
 // delete faq
 const deleteFaq = async (id: string) => {
-  await prisma.faq.delete({ where: { id } });
+  const faq = await prisma.faq.delete({ where: { id } });
+  return faq;
 };
 
 export const FaqService = {

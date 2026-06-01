@@ -18,7 +18,7 @@ const createFaq = catchAsync(async (req: Request, res: Response) => {
 
 // get all faq
 const getAllFaq = catchAsync(async (req: Request, res: Response) => {
-  const result = await FaqService.getAllFaq();
+  const result = await FaqService.getAllFaq(req.query);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -61,10 +61,24 @@ const deleteFaq = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// get faq by service type
+const getFaqByServiceType = catchAsync(async (req: Request, res: Response) => {
+  const { serviceType } = req.params;
+  const result = await FaqService.getAllFaq({ serviceType });
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Faq retrieved successfully !",
+    data: result,
+  });
+});
+
 export const FaqController = {
   createFaq,
   getAllFaq,
   getSingleFaq,
   updateFaq,
   deleteFaq,
+  getFaqByServiceType,
 };

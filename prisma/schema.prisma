@@ -404,11 +404,12 @@ model Notifications {
 }
 
 model Faq {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  question  String
-  answer    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  question    String
+  answer      String
+  serviceType ServiceType
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
   @@map("faqs")
 }
