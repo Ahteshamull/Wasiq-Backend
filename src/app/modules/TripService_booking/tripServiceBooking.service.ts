@@ -13,6 +13,9 @@ import httpStatus from "http-status";
 import { ICreateTripServiceBooking } from "./tripServiceBooking.interface";
 import { IPaginationOptions } from "../../../interfaces/paginations";
 import { paginationHelpers } from "../../../helpars/paginationHelper";
+import { Secret } from "jsonwebtoken";
+import config from "../../../config";
+import { jwtHelpers } from "../../../helpars/jwtHelpers";
 
 // create trip service booking
 const createTripServiceBooking = async (
@@ -49,6 +52,7 @@ const createTripServiceBooking = async (
   // Handle User identification (Authenticated or Guest)
   let finalUserId = userId;
   let findUser: any = null;
+  let isGuestUser = false;
 
   if (userId && /^[0-9a-fA-F]{24}$/.test(userId)) {
     findUser = await prisma.user.findUnique({
@@ -58,6 +62,7 @@ const createTripServiceBooking = async (
 
   // If not logged in but guest info provided, create or use existing guest user
   if (!findUser && guestInfo) {
+    isGuestUser = true;
     const existingUser = await prisma.user.findUnique({
       where: { email: guestInfo.email },
     });
@@ -82,6 +87,19 @@ const createTripServiceBooking = async (
     throw new ApiError(
       httpStatus.UNAUTHORIZED,
       "Please login or provide guest information to book",
+    );
+  }
+
+  let accessToken: string | undefined;
+  if (isGuestUser) {
+    accessToken = jwtHelpers.generateToken(
+      {
+        id: findUser.id,
+        email: findUser.email,
+        role: findUser.role,
+      },
+      config.jwt.jwt_secret as Secret,
+      config.jwt.expires_in as string,
     );
   }
 
@@ -272,7 +290,19 @@ const createTripServiceBooking = async (
     },
   });
 
-  return finalResult as any;
+  if (!finalResult) {
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Failed to retrieve created booking");
+  }
+
+  const responseData: any = {
+    ...finalResult,
+  };
+
+  if (accessToken) {
+    responseData.accessToken = accessToken;
+  }
+
+  return responseData;
 };
 
 // get my trip service booking
