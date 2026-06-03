@@ -1,6 +1,6 @@
 import express from "express";
 import { PaymentController } from "./payment.controller";
-import auth from "../../middlewares/auth";
+import auth, { optionalAuth } from "../../middlewares/auth";
 import { UserRole } from "@prisma/client";
 
 const router = express.Router();
@@ -16,18 +16,18 @@ router.post(
 // checkout session on stripe
 router.post(
   "/create-stripe-checkout-session/:tripServiceBookingId",
-  auth(UserRole.USER, UserRole.AGENT),
+  optionalAuth(),
   PaymentController.createStripeCheckoutSession,
 );
 
 // stripe webhook payment
 // localhost:5000/api/v1/payments/webhook
- //https://scholarships-treasurer-genesis-dental.trycloudflare.com/api/v1/payments/webhook
- router.post( 
-   "/webhook",
-   express.raw({ type: "application/json" }), // important: keep raw body
-   PaymentController.stripeHandleWebhook,
- );
+//https://scholarships-treasurer-genesis-dental.trycloudflare.com/api/v1/payments/webhook
+router.post(
+  "/webhook",
+  express.raw({ type: "application/json" }), // important: keep raw body
+  PaymentController.stripeHandleWebhook,
+);
 
 // cancel booking stripe
 router.post(
