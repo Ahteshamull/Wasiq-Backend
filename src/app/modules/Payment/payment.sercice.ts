@@ -116,13 +116,32 @@ const stripeAccountOnboarding = async (userId: string) => {
 
 // checkout session on stripe
 const createStripeCheckoutSession = async (
-  userId: string,
+  userId: string | undefined,
   tripServiceBookingId: string,
   description: string,
 ) => {
+  // find booking first
+  const booking = await prisma.tripServiceBooking.findUnique({
+    where: { id: tripServiceBookingId },
+  });
+
+  if (!booking) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Booking not found");
+  }
+
+  // ownership check (only if authenticated)
+  if (userId && booking.userId !== userId) {
+    throw new ApiError(httpStatus.FORBIDDEN, "Unauthorized booking");
+  }
+
+  const finalUserId = booking.userId;
+  if (!finalUserId) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Booking does not have an associated user");
+  }
+
   // find user with role
   const user = await prisma.user.findUnique({
-    where: { id: userId },
+    where: { id: finalUserId },
     select: {
       id: true,
       email: true,
@@ -133,20 +152,6 @@ const createStripeCheckoutSession = async (
   });
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, "User not found");
-  }
-
-  // find booking
-  const booking = await prisma.tripServiceBooking.findFirst({
-    where: { id: tripServiceBookingId, userId },
-  });
-
-  if (!booking) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Booking not found");
-  }
-
-  // ownership check
-  if (booking.userId !== userId) {
-    throw new ApiError(httpStatus.FORBIDDEN, "Unauthorized booking");
   }
 
   // prevent duplicate payment
@@ -199,7 +204,7 @@ const createStripeCheckoutSession = async (
     cancel_url: config.stripe.checkout_cancel_url,
 
     metadata: {
-      userId,
+      userId: finalUserId,
       tripServiceBookingId,
     },
   });
@@ -216,7 +221,7 @@ const createStripeCheckoutSession = async (
       status: PaymentStatus.UNPAID,
       serviceType: booking.serviceType,
       user_role: booking.user_role || user.role,
-      userId,
+      userId: finalUserId,
       tripServiceBookingId: booking.id,
       tripServiceId: booking.tripServiceId,
     },
