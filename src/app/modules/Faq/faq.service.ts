@@ -1,3 +1,4 @@
+import { ServiceType } from "@prisma/client";
 import prisma from "../../../shared/prisma";
 
 // create faq
@@ -10,8 +11,8 @@ const createFaq = async (payload: any) => {
 const getAllFaq = async (query: Record<string, any>) => {
   const { serviceType } = query;
   const whereCondition: any = {};
-  if (serviceType) {
-    whereCondition.serviceType = serviceType;
+  if (serviceType && Object.values(ServiceType).includes(serviceType as ServiceType)) {
+    whereCondition.serviceType = serviceType as ServiceType;
   }
   const faq = await prisma.faq.findMany({
     where: whereCondition,

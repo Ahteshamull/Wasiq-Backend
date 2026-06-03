@@ -1295,7 +1295,7 @@ const getTripsByLocationForModal = async (
     filters.push({ from: { contains: location, mode: "insensitive" } });
   }
 
-  if (serviceType) {
+  if (serviceType && Object.values(ServiceType).includes(serviceType)) {
     filters.push({ serviceType });
   }
 
