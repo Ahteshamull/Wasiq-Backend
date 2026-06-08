@@ -10,7 +10,7 @@ const router = express.Router();
 // create booking without tripServiceId in URL (tripServiceId comes from body)
 router.post(
   "/create-booking",
-  optionalAuth(),
+  auth(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.USER, UserRole.AGENT),
   validateRequest(
     TripServiceBookingValidation.createTripServiceBookingValidation,
   ),
@@ -20,7 +20,7 @@ router.post(
 // create trip service booking (tripServiceId from URL param)
 router.post(
   "/:tripServiceId",
-  optionalAuth(),
+  auth(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.USER, UserRole.AGENT),
   validateRequest(
     TripServiceBookingValidation.createTripServiceBookingValidation,
   ),
