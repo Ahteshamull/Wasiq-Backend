@@ -1,14 +1,14 @@
-import catchAsync from "../../../shared/catchAsync";
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import sendResponse from "../../../shared/sendResponse";
 import httpStatus from "http-status";
 import { TripServiceBookingService } from "./tripServiceBooking.service";
 import { pick } from "../../../shared/pick";
 import { paginationFields } from "../../../constants/pagination";
+import catchAsync from "../../../shared/catchAsync";
 
 // create trip service booking
 const createTripServiceBooking = catchAsync(
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.user?.id;
     const tripServiceId = req.params.tripServiceId;
 
@@ -28,18 +28,23 @@ const createTripServiceBooking = catchAsync(
       req.body,
     );
 
+    res.locals.bookingResult = result;
+
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
       message: "Trip service booking created successfully",
       data: result,
     });
+    
+    // Call next to trigger the email sending middleware
+    next();
   },
 );
 
 // create booking without tripServiceId in URL (tripServiceId optional from body)
 const createBookingWithoutParam = catchAsync(
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.user?.id;
     const tripServiceId = req.body.tripServiceId || undefined;
 
@@ -49,12 +54,17 @@ const createBookingWithoutParam = catchAsync(
       req.body,
     );
 
+    res.locals.bookingResult = result;
+
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
       message: "Trip service booking created successfully",
       data: result,
     });
+
+    // Call next to trigger the email sending middleware
+    next();
   },
 );
 

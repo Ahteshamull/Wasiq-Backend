@@ -4,6 +4,7 @@ import auth, { optionalAuth } from "../../middlewares/auth";
 import { UserRole } from "@prisma/client";
 import { TripServiceBookingValidation } from "./tripServiceBooking.validation";
 import validateRequest from "../../middlewares/validateRequest";
+import { sendBookingEmail } from "../../middlewares/sendBookingEmail";
 
 const router = express.Router();
 
@@ -15,6 +16,7 @@ router.post(
     TripServiceBookingValidation.createTripServiceBookingValidation,
   ),
   TripServiceBookingController.createBookingWithoutParam,
+  sendBookingEmail
 );
 
 // create trip service booking (tripServiceId from URL param)
@@ -25,6 +27,7 @@ router.post(
     TripServiceBookingValidation.createTripServiceBookingValidation,
   ),
   TripServiceBookingController.createTripServiceBooking,
+  sendBookingEmail
 );
 
 router.patch(

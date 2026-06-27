@@ -69,7 +69,6 @@ app.get("/", async (req: Request, res: Response) => {
   res.send(html);
 });
 
-
 // app.use("/uploads", express.static(path.join("/var/www/uploads")));
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads"))); // Serve static files from the "uploads" directory
 
