@@ -669,7 +669,7 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
           rating: popItem.rating ?? 0,
           totalRatings: popItem.totalRatings ?? 0,
           location: popItem.location,
-          image: popItem.image || [],
+          image: popItem.image ? popItem.image.map((img: string) => img.replace(/key=[^&]+/, `key=${GOOGLE_MAPS_API_KEY}`)) : [],
           types: popItem.types || [],
           city: popItem.city || "",
           cityLocation: popItem.cityLocation || null,
@@ -805,7 +805,7 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
           rating: cliffsItem.rating ?? 0,
           totalRatings: cliffsItem.totalRatings ?? 0,
           location: cliffsItem.location,
-          image: cliffsItem.image || [],
+          image: cliffsItem.image ? cliffsItem.image.map((img: string) => img.replace(/key=[^&]+/, `key=${GOOGLE_MAPS_API_KEY}`)) : [],
           types: cliffsItem.types || [],
           city: cliffsItem.city || "",
           cityLocation: cliffsItem.cityLocation || null,
@@ -843,7 +843,9 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
           totalRatings: match.totalRatings ?? place.totalRatings,
           location: match.location || place.location,
           image:
-            match.image && match.image.length > 0 ? match.image : place.image,
+            match.image && match.image.length > 0
+              ? match.image.map((img: string) => img.replace(/key=[^&]+/, `key=${GOOGLE_MAPS_API_KEY}`))
+              : place.image,
           types: match.types || place.types,
           city: match.city || "",
           cityLocation: match.cityLocation || null,
@@ -864,9 +866,34 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
     // Take only the top 8 popular places prioritized by level
     const topStoppages = matchedStoppages.slice(0, 8);
 
+    // Refresh images for topStoppages to avoid expired photo_reference
+    const refreshedTopStoppages = await Promise.all(
+      topStoppages.map(async (stoppage) => {
+        try {
+          const url = "https://maps.googleapis.com/maps/api/place/details/json";
+          const params = {
+            place_id: stoppage.id,
+            key: GOOGLE_MAPS_API_KEY,
+            fields: "photos",
+          };
+          const response = await axios.get(url, { params });
+          const place = response.data.result;
+          if (place && place.photos) {
+            stoppage.image = place.photos.map(
+              (photo: any) =>
+                `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${GOOGLE_MAPS_API_KEY}`
+            );
+          }
+        } catch (err) {
+          console.error(`Failed to refresh image for ${stoppage.name}:`, err);
+        }
+        return stoppage;
+      })
+    );
+
     return {
-      total: topStoppages.length,
-      searchableStoppage: topStoppages,
+      total: refreshedTopStoppages.length,
+      searchableStoppage: refreshedTopStoppages,
     };
   } catch (error: any) {
     throw new ApiError(
