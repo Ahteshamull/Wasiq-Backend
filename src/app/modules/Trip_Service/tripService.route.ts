@@ -144,7 +144,6 @@ router.get(
   TripServiceController.getTransferPopularTripServices,
 );
 
-// get all trip services AIRPORT_TRANSFER and isPopular
 router.get(
   "/airport-transfer/popular",
   TripServiceController.getAirportTransferPopularTripServices,
