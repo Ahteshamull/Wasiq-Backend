@@ -10,8 +10,7 @@ export const sendBookingEmail = async (req: Request, res: Response, next: NextFu
     return next();
   }
 
-  // We don't want to block the response, but if we are called before the response ends, next() will do it.
-  // Since we are placed AFTER the controller, next() just moves on, although nothing else is probably there.
+
   next();
 
   try {
