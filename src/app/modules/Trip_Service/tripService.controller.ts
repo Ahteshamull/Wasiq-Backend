@@ -546,6 +546,26 @@ const getAirportTransferPopularTripServices = catchAsync(
   },
 );
 
+// get trip service AIRPORT_TRANSFER on the from location group
+const getAirportTransferTripServicesByFromLocationGroup = catchAsync(
+  async (req: Request, res: Response) => {
+    const options = pick(req.query, paginationFields);
+    const result =
+      await TripServiceService.getAirportTransferTripServicesByFromLocationGroup(
+        options,
+      );
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message:
+        "AIRPORT_TRANSFER Trip services retrieved successfully by from location group",
+      data: result.data,
+      meta: result.meta,
+    });
+  },
+);
+
 // ----------------- transfer -----------------
 
 // get all trip services TRANSFER
@@ -722,6 +742,7 @@ export const TripServiceController = {
   // airport transfer
   getAirportTransferTripServices,
   getAirportTransferPopularTripServices,
+  getAirportTransferTripServicesByFromLocationGroup,
 
   // transfer
   getTransferTripServices,

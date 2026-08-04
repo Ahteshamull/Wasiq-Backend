@@ -150,6 +150,10 @@ router.get(
   TripServiceController.getAirportTransferPopularTripServices,
 );
 
+router.get("/airport-transfer/from-location-group",
+  TripServiceController.getAirportTransferTripServicesByFromLocationGroup,
+)
+
 // get single trip service
 router.get("/:id", TripServiceController.getSingleTripService);
 
