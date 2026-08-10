@@ -23,6 +23,6 @@ router.patch(
   ReviewController.updateReviewStatus,
 );
 
-//get all active reviews
+
 
 export const reviewRoute = router;
