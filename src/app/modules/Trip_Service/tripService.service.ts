@@ -23,7 +23,8 @@ const createTripService = async (
   const { vehicles, ...restPayload } = payload;
   let vehiclesData: Prisma.VehicleCreateWithoutTripServiceInput[] = [];
 
-  if (vehicles && vehicles.length > 0) {
+  // ONLY process vehicles if it's a DAY_TRIP
+  if (restPayload.serviceType === ServiceType.DAY_TRIP && vehicles && vehicles.length > 0) {
     const vehicleIds = vehicles.map((v) => v.vehicleId);
     const globalVehicles = await prisma.vehicle.findMany({
       where: { id: { in: vehicleIds } },

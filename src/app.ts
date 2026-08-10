@@ -38,6 +38,7 @@ export const corsOptions = {
 
 app.use(
   bodyParser.json({
+    limit: "50mb",
     verify: function (
       req: express.Request,
       res: express.Response,
@@ -50,7 +51,7 @@ app.use(
 
 app.use(cors(corsOptions));
 app.use(cookieParser());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
 
 app.use(express.static("public"));
 
