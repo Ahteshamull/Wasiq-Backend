@@ -14,11 +14,7 @@ router.post(
 
 //localhost:5000/api/v1/review/service-all-reviews
 
-router.get(
-  "/service-all-reviews",
-  auth(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.USER, UserRole.AGENT),
-  ReviewController.getAllReviews,
-);
+router.get("/service-all-reviews", auth(), ReviewController.getAllReviews);
 
 // update review status
 router.patch(

@@ -20,9 +20,11 @@ const createTripService = async (
     throw new ApiError(httpStatus.NOT_FOUND, "User not found");
   }
 
+  const { vehicles, ...restPayload } = payload;
+
   const result = await prisma.tripService.create({
     data: {
-      ...payload,
+      ...restPayload,
       userId: user.id,
     },
     include: {
@@ -336,11 +338,46 @@ const createDayTripService = async (
     throw new ApiError(httpStatus.NOT_FOUND, "User not found");
   }
 
+  const { vehicles, ...restPayload } = payload;
+  let vehiclesData: Prisma.VehicleCreateWithoutTripServiceInput[] = [];
+
+  if (vehicles && vehicles.length > 0) {
+    const vehicleIds = vehicles.map((v) => v.vehicleId);
+    const globalVehicles = await prisma.vehicle.findMany({
+      where: { id: { in: vehicleIds } },
+    });
+
+    vehiclesData = vehicles.map((v) => {
+      const gv = globalVehicles.find((g) => g.id === v.vehicleId);
+      if (!gv) {
+        throw new ApiError(
+          httpStatus.NOT_FOUND,
+          `Vehicle with id ${v.vehicleId} not found`,
+        );
+      }
+      return {
+        name: gv.name,
+        seatCount: gv.seatCount,
+        luggage: gv.luggage,
+        basePrice: v.price,
+        pricePerKm: gv.pricePerKm,
+        image: gv.image,
+        plateNumber: gv.plateNumber,
+        isActive: gv.isActive,
+      };
+    });
+  }
+
   const result = await prisma.tripService.create({
     data: {
-      ...payload,
+      ...restPayload,
       userId: user.id,
       serviceType: ServiceType.DAY_TRIP,
+      ...(vehiclesData.length > 0 && {
+        vehicles: {
+          create: vehiclesData,
+        },
+      }),
     },
     include: {
       user: {
@@ -350,6 +387,7 @@ const createDayTripService = async (
           email: true,
         },
       },
+      vehicles: true,
     },
   });
 
@@ -1300,9 +1338,11 @@ const updateTripService = async (
     );
   }
 
+  const { vehicles, userId, ...restPayload } = payload;
+
   const result = await prisma.tripService.update({
     where: { id },
-    data: payload,
+    data: restPayload,
     include: {
       user: {
         select: {

@@ -12,6 +12,7 @@ export type ITripService = Omit<
   pickup?: string | null;
   includedContent?: string[];
   excludedContent?: string[];
+  vehicles?: { vehicleId: string; price: number }[];
   createdAt?: Date;
   updatedAt?: Date;
 };

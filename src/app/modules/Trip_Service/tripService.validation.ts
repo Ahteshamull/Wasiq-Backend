@@ -172,6 +172,14 @@ const createDayTripServiceValidationSchema = z.object({
       .transform((val) => (val ? parseInt(val) : 0))
       .refine((val) => val >= 0, "Review count must be non-negative")
       .default("0"),
+    vehicles: z
+      .array(
+        z.object({
+          vehicleId: z.string().min(1, "Vehicle ID is required"),
+          price: z.preprocess((val) => Number(val), z.number().positive("Price must be a positive number")),
+        })
+      )
+      .optional(),
   }),
 });
 
