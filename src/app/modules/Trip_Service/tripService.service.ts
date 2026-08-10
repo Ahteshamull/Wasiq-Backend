@@ -21,11 +21,44 @@ const createTripService = async (
   }
 
   const { vehicles, ...restPayload } = payload;
+  let vehiclesData: Prisma.VehicleCreateWithoutTripServiceInput[] = [];
+
+  if (vehicles && vehicles.length > 0) {
+    const vehicleIds = vehicles.map((v) => v.vehicleId);
+    const globalVehicles = await prisma.vehicle.findMany({
+      where: { id: { in: vehicleIds } },
+    });
+
+    vehiclesData = vehicles.map((v) => {
+      const gv = globalVehicles.find((g) => g.id === v.vehicleId);
+      if (!gv) {
+        throw new ApiError(
+          httpStatus.NOT_FOUND,
+          `Vehicle with id ${v.vehicleId} not found`,
+        );
+      }
+      return {
+        name: gv.name,
+        seatCount: gv.seatCount,
+        luggage: gv.luggage,
+        basePrice: v.price,
+        pricePerKm: gv.pricePerKm,
+        image: gv.image,
+        plateNumber: gv.plateNumber,
+        isActive: gv.isActive,
+      };
+    });
+  }
 
   const result = await prisma.tripService.create({
     data: {
       ...restPayload,
       userId: user.id,
+      ...(vehiclesData.length > 0 && {
+        vehicles: {
+          create: vehiclesData,
+        },
+      }),
     },
     include: {
       user: {
@@ -35,6 +68,7 @@ const createTripService = async (
           email: true,
         },
       },
+      vehicles: true,
     },
   });
 
@@ -340,6 +374,9 @@ const createDayTripService = async (
 
   const { vehicles, ...restPayload } = payload;
   let vehiclesData: Prisma.VehicleCreateWithoutTripServiceInput[] = [];
+  
+  console.log("DEBUG: Received payload:", JSON.stringify(payload, null, 2));
+  console.log("DEBUG: Extracted vehicles:", vehicles);
 
   if (vehicles && vehicles.length > 0) {
     const vehicleIds = vehicles.map((v) => v.vehicleId);
