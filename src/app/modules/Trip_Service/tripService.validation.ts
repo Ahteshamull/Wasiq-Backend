@@ -89,8 +89,11 @@ const createTripServiceValidationSchema = z.object({
       .array(
         z.object({
           vehicleId: z.string().min(1, "Vehicle ID is required"),
-          price: z.preprocess((val) => Number(val), z.number().positive("Price must be a positive number")),
-        })
+          price: z.preprocess(
+            (val) => Number(val),
+            z.number().positive("Price must be a positive number"),
+          ),
+        }),
       )
       .optional(),
   }),
@@ -184,8 +187,11 @@ const createDayTripServiceValidationSchema = z.object({
       .array(
         z.object({
           vehicleId: z.string().min(1, "Vehicle ID is required"),
-          price: z.preprocess((val) => Number(val), z.number().positive("Price must be a positive number")),
-        })
+          price: z.preprocess(
+            (val) => Number(val),
+            z.number().positive("Price must be a positive number"),
+          ),
+        }),
       )
       .optional(),
   }),
@@ -400,6 +406,17 @@ const updateTripServiceValidationSchema = z.object({
       .optional()
       .transform((val) => (val ? parseInt(val) : undefined))
       .refine((val) => !val || val >= 0, "Review count must be non-negative"),
+    vehicles: z
+      .array(
+        z.object({
+          vehicleId: z.string().min(1, "Vehicle ID is required"),
+          price: z.preprocess(
+            (val) => Number(val),
+            z.number().positive("Price must be a positive number"),
+          ),
+        }),
+      )
+      .optional(),
   }),
 });
 

@@ -140,6 +140,7 @@ const getAllTripServices = async (
           email: true,
         },
       },
+      vehicles: true,
     },
     skip,
     take: limit,
@@ -195,6 +196,7 @@ const getByTheHourTripServices = async (
           email: true,
         },
       },
+      vehicles: true,
     },
   });
 
@@ -246,6 +248,7 @@ const getByTheHourPopularTripServices = async (
           email: true,
         },
       },
+      vehicles: true,
     },
   });
 
@@ -302,6 +305,7 @@ const createExploreService = async (
           email: true,
         },
       },
+      vehicles: true,
     },
   });
 
@@ -343,6 +347,7 @@ const getExploreService = async (
           email: true,
         },
       },
+      vehicles: true,
     },
   });
 
@@ -462,6 +467,7 @@ const getDayTripTripServices = async (
           email: true,
         },
       },
+      vehicles: true,
     },
   });
 
@@ -513,6 +519,7 @@ const getDayTripPopularTripServices = async (
           email: true,
         },
       },
+      vehicles: true,
     },
   });
 
@@ -563,6 +570,7 @@ const getDayTripTripServicesByFromLocationGroup = async (
           email: true,
         },
       },
+      vehicles: true,
     },
   });
 
@@ -638,6 +646,7 @@ const createMultiDayTourTripService = async (
       status: true,
       createdAt: true,
       updatedAt: true,
+      vehicles: true,
       user: {
         select: {
           id: true,
@@ -681,6 +690,7 @@ const getMultiDayTourTripServices = async (
           email: true,
         },
       },
+      vehicles: true,
     },
   });
 
@@ -732,6 +742,7 @@ const getMultiDayTourPopularTripServices = async (
           email: true,
         },
       },
+      vehicles: true,
     },
   });
 
@@ -798,6 +809,7 @@ const getMultiDayTourTripServicesByTourDaysGroup = async (
       reviewCount: true,
       createdAt: true,
       updatedAt: true,
+      vehicles: true,
       user: {
         select: {
           id: true,
@@ -878,6 +890,7 @@ const getPrivateTransferTripServices = async (
           email: true,
         },
       },
+      vehicles: true,
     },
   });
 
@@ -988,6 +1001,7 @@ const getPrivateTransferPopularTripServices = async (
           email: true,
         },
       },
+      vehicles: true,
     },
   });
 
@@ -1038,6 +1052,7 @@ const getPrivateTransferTripServicesByFromLocationGroup = async (
           email: true,
         },
       },
+      vehicles: true,
     },
   });
 
@@ -1103,6 +1118,7 @@ const getAirportTransferTripServices = async (
           email: true,
         },
       },
+      vehicles: true,
     },
   });
 
@@ -1154,6 +1170,7 @@ const getAirportTransferPopularTripServices = async (
           email: true,
         },
       },
+      vehicles: true,
     },
   });
 
@@ -1204,6 +1221,7 @@ const getAirportTransferTripServicesByFromLocationGroup = async (
           email: true,
         },
       },
+      vehicles: true,
     },
   });
 
@@ -1269,6 +1287,7 @@ const getTransferTripServices = async (
           email: true,
         },
       },
+      vehicles: true,
     },
   });
 
@@ -1320,6 +1339,7 @@ const getTransferPopularTripServices = async (
           email: true,
         },
       },
+      vehicles: true,
     },
   });
 
@@ -1349,6 +1369,7 @@ const getSingleTripService = async (id: string): Promise<TripService> => {
           email: true,
         },
       },
+      vehicles: true,
     },
   });
 
@@ -1377,10 +1398,46 @@ const updateTripService = async (
   }
 
   const { vehicles, userId, ...restPayload } = payload;
+  let vehiclesData: Prisma.VehicleCreateWithoutTripServiceInput[] = [];
+
+  if (vehicles && vehicles.length > 0) {
+    const vehicleIds = vehicles.map((v) => v.vehicleId);
+    const globalVehicles = await prisma.vehicle.findMany({
+      where: { id: { in: vehicleIds } },
+    });
+
+    vehiclesData = vehicles.map((v) => {
+      const gv = globalVehicles.find((g) => g.id === v.vehicleId);
+      if (!gv) {
+        throw new ApiError(
+          httpStatus.NOT_FOUND,
+          `Vehicle with id ${v.vehicleId} not found`,
+        );
+      }
+      return {
+        name: gv.name,
+        seatCount: gv.seatCount,
+        luggage: gv.luggage,
+        basePrice: v.price,
+        pricePerKm: gv.pricePerKm,
+        image: gv.image,
+        plateNumber: gv.plateNumber,
+        isActive: gv.isActive,
+      };
+    });
+  }
 
   const result = await prisma.tripService.update({
     where: { id },
-    data: restPayload,
+    data: {
+      ...restPayload,
+      ...(vehicles ? {
+        vehicles: {
+          deleteMany: {},
+          create: vehiclesData
+        }
+      } : {})
+    },
     include: {
       user: {
         select: {
@@ -1389,6 +1446,7 @@ const updateTripService = async (
           email: true,
         },
       },
+      vehicles: true,
     },
   });
 
@@ -1419,6 +1477,7 @@ const deleteTripService = async (id: string): Promise<TripService> => {
           email: true,
         },
       },
+      vehicles: true,
     },
   });
 
@@ -1474,6 +1533,7 @@ const getTripsByLocationForModal = async (
       pickup: true,
       includedContent: true,
       excludedContent: true,
+      vehicles: true,
     },
   });
 
@@ -1519,6 +1579,7 @@ const getTripServicesByFromLocation = async (
           email: true,
         },
       },
+      vehicles: true,
     },
   });
 
