@@ -11,6 +11,8 @@ import {
 } from "@prisma/client";
 import config from "../../../config";
 import Stripe from "stripe";
+import emailSender from "../../../helpars/emailSender";
+import { generateBookingConfirmedEmailTemplate } from "../../../shared/utils/emailTemplates";
 
 // stripe account onboarding
 const stripeAccountOnboarding = async (userId: string) => {
@@ -301,6 +303,33 @@ const stripeHandleWebhook = async (event: Stripe.Event) => {
 
       // transaction update
       await prisma.$transaction(transactionOps);
+
+      // Send booking confirmation email
+      try {
+        const bookingDetails = await prisma.tripServiceBooking.findUnique({
+          where: { id: payment.tripServiceBookingId! },
+          include: {
+            user: {
+              select: {
+                fullName: true,
+                email: true,
+              },
+            },
+            tripService: {
+              select: {
+                title: true,
+              },
+            },
+          },
+        });
+
+        if (bookingDetails && bookingDetails.user && bookingDetails.user.email) {
+          const emailHtml = generateBookingConfirmedEmailTemplate(bookingDetails);
+          await emailSender("Booking Confirmed Successfully", bookingDetails.user.email, emailHtml);
+        }
+      } catch (emailError) {
+        console.error("Error sending booking confirmation email:", emailError);
+      }
 
       // handle agent transfer if user is AGENT and has stripe account
       if (
