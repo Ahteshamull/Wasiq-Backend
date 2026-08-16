@@ -124,7 +124,8 @@ const getAllInactiveAgents = catchAsync(async (req: Request, res: Response) => {
 const getAllAdmins = catchAsync(async (req: Request, res: Response) => {
   const filter = pick(req.query, filterField);
   const options = pick(req.query, paginationFields);
-  const result = await UserService.getAllAdmins(filter, options);
+  const loggedInUserId = req.user?.id;
+  const result = await UserService.getAllAdmins(filter, options, loggedInUserId);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,

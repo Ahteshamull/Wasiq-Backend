@@ -818,6 +818,7 @@ const getAdminTotalEarnings = async (options: IPaginationOptions) => {
       status: {
         in: [PaymentStatus.PAID],
       },
+      isDeleted: false,
     },
     _sum: {
       admin_commission: true,
@@ -833,18 +834,18 @@ const getAdminTotalEarnings = async (options: IPaginationOptions) => {
     },
   });
 
-  // average earns by confirmed completed rides
-  const totalConfirmCompletedBooking = await prisma.tripServiceBooking.count({
+  const total = await prisma.payment.count({
     where: {
       status: {
-        in: [BookingStatus.CONFIRMED, BookingStatus.COMPLETED],
+        in: [PaymentStatus.PAID],
       },
+      isDeleted: false,
     },
   });
 
   const averageEarnings =
-    totalConfirmCompletedBooking > 0 && totalPayments._sum.admin_commission
-      ? totalPayments._sum.admin_commission / totalConfirmCompletedBooking
+    total > 0 && totalPayments._sum.admin_commission
+      ? Number((totalPayments._sum.admin_commission / total).toFixed(2))
       : 0;
 
   // total payment database info
@@ -853,19 +854,12 @@ const getAdminTotalEarnings = async (options: IPaginationOptions) => {
       status: {
         in: [PaymentStatus.PAID],
       },
+      isDeleted: false,
     },
     skip,
     take: limit,
     orderBy: {
       createdAt: "desc",
-    },
-  });
-
-  const total = await prisma.payment.count({
-    where: {
-      status: {
-        in: [PaymentStatus.PAID],
-      },
     },
   });
 

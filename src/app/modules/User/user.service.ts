@@ -558,6 +558,7 @@ const getAllInactiveAgents = async (
 const getAllAdmins = async (
   params: IFilterRequest,
   options: IPaginationOptions,
+  loggedInUserId?: string,
 ): Promise<IAdminResponse> => {
   const { limit, page, skip } = paginationHelpers.calculatedPagination(options);
 
@@ -571,6 +572,14 @@ const getAllAdmins = async (
       in: [UserRole.ADMIN, UserRole.SUPER_ADMIN],
     },
   });
+
+  if (loggedInUserId) {
+    filters.push({
+      id: {
+        not: loggedInUserId,
+      },
+    });
+  }
 
   // text search
   if (params?.searchTerm) {
