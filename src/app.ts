@@ -24,13 +24,14 @@ const app: Application = express();
 app.set("trust proxy", true);
 
 export const corsOptions = {
-  // origin: [
-  //   "http://localhost:5173",
-  //   "http://localhost:3000",
-  //   "https://timothy-dashboard.netlify.app",
-  //   "https://temothy-dashboard.vercel.app",
-  // ],
-  origin: "*",
+  origin: [
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "https://tourenzo.com",
+    "https://api.tourenzo.com",
+    "https://timothy-dashboard.netlify.app",
+    "https://temothy-dashboard.vercel.app",
+  ],
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,

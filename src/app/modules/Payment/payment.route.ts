@@ -22,7 +22,7 @@ router.post(
 
 // stripe webhook payment
 // localhost:5000/api/v1/payments/webhook
-//https://scholarships-treasurer-genesis-dental.trycloudflare.com/api/v1/payments/webhook
+// https://api.tourenzo.com/api/v1/payments/webhook
 router.post(
   "/webhook",
   express.raw({ type: "application/json" }), // important: keep raw body
