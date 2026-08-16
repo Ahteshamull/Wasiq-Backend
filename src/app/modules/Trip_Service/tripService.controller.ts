@@ -8,6 +8,20 @@ import { uploadFile } from "../../../helpars/fileUploader";
 import { pick } from "../../../shared/pick";
 import { paginationFields } from "../../../constants/pagination";
 
+// helper to map basePrice to price for vehicles
+const mapVehiclePrice = (trip: any) => {
+  if (trip && trip.vehicles && Array.isArray(trip.vehicles)) {
+    return {
+      ...trip,
+      vehicles: trip.vehicles.map((v: any) => ({
+        ...v,
+        price: v.basePrice,
+      })),
+    };
+  }
+  return trip;
+};
+
 // create trip service
 const createTripService = catchAsync(async (req: Request, res: Response) => {
   const files = req.files as {
@@ -182,7 +196,7 @@ const createDayTripService = catchAsync(async (req: Request, res: Response) => {
     statusCode: httpStatus.CREATED,
     success: true,
     message: "Day Trip service created successfully",
-    data: result,
+    data: mapVehiclePrice(result),
   });
 });
 
@@ -264,7 +278,7 @@ const getDayTripTripServices = catchAsync(
       statusCode: httpStatus.OK,
       success: true,
       message: "BY_THE_DAY Trip services retrieved successfully",
-      data: result.data,
+      data: result.data.map(mapVehiclePrice),
       meta: result.meta,
     });
   },
@@ -281,7 +295,7 @@ const getDayTripPopularTripServices = catchAsync(
       statusCode: httpStatus.OK,
       success: true,
       message: "BY_THE_DAY and isPopular Trip services retrieved successfully",
-      data: result.data,
+      data: result.data.map(mapVehiclePrice),
       meta: result.meta,
     });
   },
@@ -296,12 +310,17 @@ const getDayTripTripServicesByFromLocationGroup = catchAsync(
         options,
       );
 
+    const mappedData = result.data.map((group: any) => ({
+      ...group,
+      trips: group.trips?.map(mapVehiclePrice),
+    }));
+
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
       message:
         "DAY_TRIP Trip services retrieved successfully by from location group",
-      data: result.data,
+      data: mappedData,
       meta: result.meta,
     });
   },
@@ -604,14 +623,13 @@ const getTransferPopularTripServices = catchAsync(
 // get single trip service
 const getSingleTripService = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-
   const result = await TripServiceService.getSingleTripService(id);
 
-  sendResponse<ITripService>(res, {
+  sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
     message: "Trip service retrieved successfully",
-    data: result,
+    data: mapVehiclePrice(result),
   });
 });
 
@@ -652,7 +670,7 @@ const updateTripService = catchAsync(async (req: Request, res: Response) => {
     statusCode: httpStatus.OK,
     success: true,
     message: "Trip service updated successfully",
-    data: result,
+    data: mapVehiclePrice(result),
   });
 });
 
