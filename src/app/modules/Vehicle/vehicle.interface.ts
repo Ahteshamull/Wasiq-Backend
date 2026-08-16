@@ -10,8 +10,6 @@ export type IVehicleFilters = {
   search?: string;
   minSeatCount?: number;
   maxSeatCount?: number;
-  minBasePrice?: number;
-  maxBasePrice?: number;
   isActive?: boolean;
 };
 

@@ -45,8 +45,6 @@ const getAllVehicles = async (
     search,
     minSeatCount,
     maxSeatCount,
-    minBasePrice,
-    maxBasePrice,
     isActive,
   } = filters;
 
@@ -78,14 +76,6 @@ const getAllVehicles = async (
     if (minSeatCount !== undefined) seatCountFilter.gte = minSeatCount;
     if (maxSeatCount !== undefined) seatCountFilter.lte = maxSeatCount;
     andConditions.push({ seatCount: seatCountFilter });
-  }
-
-  // filter by base price range
-  if (minBasePrice !== undefined || maxBasePrice !== undefined) {
-    const basePriceFilter: Prisma.FloatFilter = {};
-    if (minBasePrice !== undefined) basePriceFilter.gte = minBasePrice;
-    if (maxBasePrice !== undefined) basePriceFilter.lte = maxBasePrice;
-    andConditions.push({ basePrice: basePriceFilter });
   }
 
   // filter by active status

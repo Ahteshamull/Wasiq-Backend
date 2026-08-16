@@ -249,18 +249,16 @@ model TripServiceStoppage {
 }
 
 model Vehicle {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  name        String // Sedan, Compact MPV, Van, Luxury Sedan
-  seatCount   Int
-  luggage     Int
-  basePrice   Float
-  pricePerKm  Float?
-  image       String[]
-  plateNumber String?
-  isActive    Boolean  @default(true)
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  name          String // Sedan, Compact MPV, Van, Luxury Sedan
+  seatCount     Int
+  luggage       Int
+  image         String[]
+  plateNumber   String?
+  isActive      Boolean  @default(true)
   // driverName  String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   // relations
   tripServiceVehicles TripServiceVehicle[]

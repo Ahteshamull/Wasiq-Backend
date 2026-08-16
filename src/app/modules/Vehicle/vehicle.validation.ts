@@ -19,28 +19,6 @@ const createVehicleValidation = z.object({
       }
       return parsed;
     }),
-    basePrice: z.string().transform((val) => {
-      const parsed = parseFloat(val);
-      if (isNaN(parsed) || parsed < 0) {
-        throw new Error(
-          "Base price must be a valid number greater than or equal to 0",
-        );
-      }
-      return parsed;
-    }),
-    pricePerKm: z
-      .string()
-      .transform((val) => {
-        if (val === "" || val === undefined) return undefined;
-        const parsed = parseFloat(val);
-        if (isNaN(parsed) || parsed < 0) {
-          throw new Error(
-            "Price per km must be a valid number greater than or equal to 0",
-          );
-        }
-        return parsed;
-      })
-      .optional(),
     plateNumber: z.string().min(1, "Plate number is required"),
     isActive: z.string().transform((val) => {
       if (val !== "true" && val !== "false") {
@@ -71,31 +49,6 @@ const updateVehicleValidation = z.object({
         if (isNaN(parsed) || parsed < 0) {
           throw new Error(
             "Luggage capacity must be a valid number greater than or equal to 0",
-          );
-        }
-        return parsed;
-      })
-      .optional(),
-    basePrice: z
-      .string()
-      .transform((val) => {
-        const parsed = parseFloat(val);
-        if (isNaN(parsed) || parsed < 0) {
-          throw new Error(
-            "Base price must be a valid number greater than or equal to 0",
-          );
-        }
-        return parsed;
-      })
-      .optional(),
-    pricePerKm: z
-      .string()
-      .transform((val) => {
-        if (val === "" || val === undefined) return undefined;
-        const parsed = parseFloat(val);
-        if (isNaN(parsed) || parsed < 0) {
-          throw new Error(
-            "Price per km must be a valid number greater than or equal to 0",
           );
         }
         return parsed;

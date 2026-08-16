@@ -209,13 +209,28 @@ const createTripServiceBooking = async (
 
     // create booking vehicles
     if (bookingVehicles.length > 0) {
+      const vehicleIds = bookingVehicles.map((v) => v.vehicleId);
+      const tripServiceVehicles = tripServiceId
+        ? await tx.tripServiceVehicle.findMany({
+            where: {
+              tripServiceId,
+              vehicleId: { in: vehicleIds },
+            },
+          })
+        : [];
+
       const bookingVehicleData = bookingVehicles.map((bv) => {
         const vehicle = vehicles.find((v) => v.id === bv.vehicleId);
         if (!vehicle) return null;
 
-        let price = vehicle.basePrice;
-        if (vehicle.pricePerKm && distanceKm) {
-          price += vehicle.pricePerKm * distanceKm;
+        let price = 0;
+
+        // 1. Check TripServiceVehicle price if tripServiceId is provided
+        if (tripServiceId) {
+          const tsv = tripServiceVehicles.find((t) => t.vehicleId === bv.vehicleId);
+          if (tsv) {
+            price = tsv.price;
+          }
         }
 
         return tx.bookingVehicle.create({
