@@ -171,6 +171,13 @@ const deleteVehicle = async (id: string): Promise<Vehicle> => {
     );
   }
 
+  // Delete all TripServiceVehicle associations to prevent orphaned records in MongoDB
+  await prisma.tripServiceVehicle.deleteMany({
+    where: {
+      vehicleId: id,
+    },
+  });
+
   const result = await prisma.vehicle.delete({
     where: {
       id,
