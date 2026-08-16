@@ -149,6 +149,20 @@ const deleteVehicle = async (id: string): Promise<Vehicle> => {
     throw new ApiError(httpStatus.NOT_FOUND, "Vehicle not found");
   }
 
+  // Check if the vehicle is associated with any bookings
+  const bookingCount = await prisma.bookingVehicle.count({
+    where: {
+      vehicleId: id,
+    },
+  });
+
+  if (bookingCount > 0) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Vehicle cannot be deleted because it is associated with existing bookings. You can deactivate it instead.",
+    );
+  }
+
   const result = await prisma.vehicle.delete({
     where: {
       id,
