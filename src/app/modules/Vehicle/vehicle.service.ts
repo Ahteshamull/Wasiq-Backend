@@ -9,22 +9,29 @@ import httpStatus from "http-status";
 
 // create vehicle
 const createVehicle = async (payload: IVehicle): Promise<Vehicle> => {
-  const existingVehicle = await prisma.vehicle.findFirst({
-    where: {
-      name: payload.name,
-      seatCount: Number(payload.seatCount),
-      luggage: Number(payload.luggage),
-    },
-  });
+  if (payload.plateNumber) {
+    const existingVehicleByPlate = await prisma.vehicle.findFirst({
+      where: {
+        plateNumber: {
+          equals: payload.plateNumber,
+          mode: "insensitive",
+        },
+      },
+    });
 
-  if (existingVehicle) {
-    return existingVehicle;
+    if (existingVehicleByPlate) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        "Vehicle with this plate number already exists.",
+      );
+    }
   }
 
-  throw new ApiError(
-    httpStatus.BAD_REQUEST,
-    "Creating new vehicles is disabled. Only existing vehicles can be linked."
-  );
+  const result = await prisma.vehicle.create({
+    data: payload as Prisma.VehicleCreateInput,
+  });
+
+  return result;
 };
 
 // get all vehicles
