@@ -14,6 +14,7 @@ const mapTripService = (trip: any) => {
     if (!tsv.vehicle) return null;
     return {
       ...tsv.vehicle,
+      price: tsv.price,
       basePrice: tsv.price,
     };
   }).filter(Boolean);
@@ -32,7 +33,7 @@ const mapTripServices = (trips: any[]) => {
 const createTripService = async (
   userId: string,
   payload: ITripService,
-): Promise<TripService> => {
+): Promise<any> => {
   // check if user exists
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -90,7 +91,7 @@ const createTripService = async (
     },
   });
 
-  return result;
+  return mapTripService(result) as any;
 };
 
 // get all trip services
@@ -1373,7 +1374,7 @@ const getTransferPopularTripServices = async (
 };
 
 // get single trip service
-const getSingleTripService = async (id: string): Promise<TripService> => {
+const getSingleTripService = async (id: string): Promise<any> => {
   const result = await prisma.tripService.findUnique({
     where: { id },
     include: {
@@ -1392,7 +1393,7 @@ const getSingleTripService = async (id: string): Promise<TripService> => {
     throw new ApiError(httpStatus.NOT_FOUND, "Trip service not found");
   }
 
-  return result;
+  return mapTripService(result) as any;
 };
 
 // update trip service
