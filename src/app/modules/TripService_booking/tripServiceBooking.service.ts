@@ -291,7 +291,10 @@ const createTripServiceBooking = async (
   });
 
   if (!finalResult) {
-    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Failed to retrieve created booking");
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "Failed to retrieve created booking",
+    );
   }
 
   const responseData: any = {

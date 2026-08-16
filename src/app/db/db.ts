@@ -15,7 +15,11 @@ export const initiateSuperAdmin = async () => {
     where: { email: payload.email },
   });
 
-  if (existingSuperAdmin) {
+  const existingAdmin = await prisma.admin.findUnique({
+    where: { email: payload.email },
+  });
+
+  if (existingSuperAdmin || existingAdmin) {
     return;
   }
 

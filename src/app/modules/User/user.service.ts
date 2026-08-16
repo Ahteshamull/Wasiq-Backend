@@ -2,7 +2,13 @@ import bcrypt from "bcryptjs";
 import httpStatus from "http-status";
 import ApiError from "../../../errors/ApiErrors";
 import prisma from "../../../shared/prisma";
-import { Prisma, User, UserRole, UserStatus, BookingStatus } from "@prisma/client";
+import {
+  Prisma,
+  User,
+  UserRole,
+  UserStatus,
+  BookingStatus,
+} from "@prisma/client";
 import { ObjectId } from "mongodb";
 import { IPaginationOptions } from "../../../interfaces/paginations";
 import {
