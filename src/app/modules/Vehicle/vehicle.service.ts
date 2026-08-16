@@ -9,11 +9,22 @@ import httpStatus from "http-status";
 
 // create vehicle
 const createVehicle = async (payload: IVehicle): Promise<Vehicle> => {
-  const result = await prisma.vehicle.create({
-    data: payload,
+  const existingVehicle = await prisma.vehicle.findFirst({
+    where: {
+      name: payload.name,
+      seatCount: Number(payload.seatCount),
+      luggage: Number(payload.luggage),
+    },
   });
 
-  return result;
+  if (existingVehicle) {
+    return existingVehicle;
+  }
+
+  throw new ApiError(
+    httpStatus.BAD_REQUEST,
+    "Creating new vehicles is disabled. Only existing vehicles can be linked."
+  );
 };
 
 // get all vehicles

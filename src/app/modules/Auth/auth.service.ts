@@ -545,7 +545,7 @@ const deleteUser = async (userId: string) => {
         await tx.tripServiceStoppage.deleteMany({
           where: { tripServiceId: { in: tripServiceIds } },
         });
-        await tx.vehicle.deleteMany({
+        await tx.tripServiceVehicle.deleteMany({
           where: { tripServiceId: { in: tripServiceIds } },
         });
         await tx.review.deleteMany({
