@@ -203,7 +203,7 @@ model TripService {
   userId               String                @db.ObjectId
   tripServiceBookings  TripServiceBooking[]
   tripServiceStoppages TripServiceStoppage[]
-  vehicles             Vehicle[]
+  tripServiceVehicles  TripServiceVehicle[]
   reviews              Review[]
 
   @@map("trip_services")
@@ -263,8 +263,7 @@ model Vehicle {
   updatedAt   DateTime @updatedAt
 
   // relations
-  tripServiceId   String?          @db.ObjectId
-  tripService     TripService?     @relation(fields: [tripServiceId], references: [id])
+  tripServiceVehicles TripServiceVehicle[]
   bookingVehicles BookingVehicle[] // many-to-many relationship
 
   @@map("vehicles")
@@ -343,6 +342,21 @@ model BookingVehicle {
 
   @@unique([bookingId, vehicleId])
   @@map("booking_vehicles")
+}
+
+model TripServiceVehicle {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  tripServiceId String   @db.ObjectId
+  vehicleId     String   @db.ObjectId
+  price         Float
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tripService TripService @relation(fields: [tripServiceId], references: [id], onDelete: Cascade)
+  vehicle     Vehicle     @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@unique([tripServiceId, vehicleId])
+  @@map("trip_service_vehicles")
 }
 
 model Review {

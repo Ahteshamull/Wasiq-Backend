@@ -1,0 +1,19 @@
+﻿diff --git a/src/app/modules/User/user.service.ts b/src/app/modules/User/user.service.ts
+index 26c4cb1..bab9c38 100644
+--- a/src/app/modules/User/user.service.ts
++++ b/src/app/modules/User/user.service.ts
+@@ -2,7 +2,13 @@ import bcrypt from "bcryptjs";
+ import httpStatus from "http-status";
+ import ApiError from "../../../errors/ApiErrors";
+ import prisma from "../../../shared/prisma";
+-import { Prisma, User, UserRole, UserStatus, BookingStatus } from "@prisma/client";
++import {
++  Prisma,
++  User,
++  UserRole,
++  UserStatus,
++  BookingStatus,
++} from "@prisma/client";
+ import { ObjectId } from "mongodb";
+ import { IPaginationOptions } from "../../../interfaces/paginations";
+ import {
