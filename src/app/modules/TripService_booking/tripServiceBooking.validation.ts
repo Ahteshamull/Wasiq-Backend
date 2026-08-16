@@ -30,7 +30,11 @@ const createTripServiceBookingValidation = z.object({
     passengers: z.number().int().min(1, "Passengers must be at least 1"),
     luggage: z.number().int().min(0).optional(),
     distanceKm: z.number().optional(),
-    basePrice: z.number().min(0, "Base price is required"),
+    basePrice: z
+      .number()
+      .nullable()
+      .optional()
+      .transform((val) => val ?? 0),
     vehiclePrice: z.number().min(0, "Vehicle price is required"),
     stoppagePrice: z.number().optional(),
     totalPrice: z.number().min(0, "Total price is required"),
@@ -104,7 +108,11 @@ const updateTripServiceBookingValidation = z.object({
     passengers: z.number().int().min(1).optional(),
     luggage: z.number().int().min(0).optional(),
     distanceKm: z.number().optional(),
-    basePrice: z.number().min(0).optional(),
+    basePrice: z
+      .number()
+      .nullable()
+      .optional()
+      .transform((val) => val ?? 0),
     vehiclePrice: z.number().min(0).optional(),
     stoppagePrice: z.number().optional(),
     totalPrice: z.number().min(0).optional(),
