@@ -926,11 +926,7 @@ const getAdminTotalBookings = async (options: IPaginationOptions & { status?: st
 
   const where = status
     ? { status: status as BookingStatus }
-    : {
-        status: {
-          in: [BookingStatus.CONFIRMED, BookingStatus.COMPLETED],
-        },
-      };
+    : {}; // default: show all statuses
 
   // total payments
   const totalBookings = await prisma.tripServiceBooking.count({
@@ -957,6 +953,15 @@ const getAdminTotalBookings = async (options: IPaginationOptions & { status?: st
           email: true,
           profileImage: true,
           contactNumber: true,
+        },
+      },
+      payments: {
+        select: {
+          id: true,
+          status: true,
+          amount: true,
+          agent_commission: true,
+          paymentIntentId: true,
         },
       },
     },
