@@ -270,6 +270,8 @@ model Vehicle {
 model TripServiceBooking {
   id            String        @id @default(auto()) @map("_id") @db.ObjectId
   clientName    String?
+  guestEmail    String?
+  guestPhone    String?
   from          String
   fromLat       Float?
   fromLng       Float?

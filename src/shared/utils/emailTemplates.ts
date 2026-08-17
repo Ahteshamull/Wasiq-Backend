@@ -3,7 +3,7 @@ export const generateBookingCreatedUserEmailTemplate = (booking: any): string =>
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
       <h2 style="color: #4CAF50; text-align: center;">Booking Created</h2>
-      <p>Dear <strong>${booking.user?.fullName || "Valued Customer"}</strong>,</p>
+      <p>Dear <strong>${booking.clientName || booking.user?.fullName || "Valued Customer"}</strong>,</p>
       <p>Your booking for <strong>${bookingTitle}</strong> has been created successfully (Payment Pending).</p>
       <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
         <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>From:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.from}</td></tr>
@@ -23,7 +23,7 @@ export const generateBookingCreatedAdminEmailTemplate = (booking: any): string =
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
       <h2 style="color: #FF5722; text-align: center;">New Booking Received</h2>
-      <p>A new booking has been placed by <strong>${booking.user?.fullName || "Guest User"}</strong> (${booking.user?.email || "No Email"}).</p>
+      <p>A new booking has been placed by <strong>${booking.clientName || booking.user?.fullName || "Guest User"}</strong> (${booking.guestEmail || booking.user?.email || "No Email"}).</p>
       <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
         <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Service:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${bookingTitle}</td></tr>
         <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>From:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.from}</td></tr>
@@ -41,7 +41,7 @@ export const generateBookingConfirmedEmailTemplate = (booking: any): string => {
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
       <h2 style="color: #4CAF50; text-align: center;">Booking Confirmed! 🏨</h2>
-      <p>Dear <strong>${booking.user?.fullName || "Valued Customer"}</strong>,</p>
+      <p>Dear <strong>${booking.clientName || booking.user?.fullName || "Valued Customer"}</strong>,</p>
       <p>Your payment has been successfully processed and your booking for <strong>${bookingTitle}</strong> is now <strong>CONFIRMED</strong>.</p>
       <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
         <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Booking ID:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.id}</td></tr>

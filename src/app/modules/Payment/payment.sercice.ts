@@ -151,7 +151,10 @@ const createStripeCheckoutSession = async (
 
   const finalUserId = booking.userId;
   if (!finalUserId) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "Booking does not have an associated user");
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Booking does not have an associated user",
+    );
   }
 
   // find user with role
@@ -336,9 +339,18 @@ const stripeHandleWebhook = async (event: Stripe.Event) => {
           },
         });
 
-        if (bookingDetails && bookingDetails.user && bookingDetails.user.email) {
-          const emailHtml = generateBookingConfirmedEmailTemplate(bookingDetails);
-          await emailSender("Booking Confirmed Successfully", bookingDetails.user.email, emailHtml);
+        const recipientEmail =
+          (bookingDetails as unknown as { guestEmail?: string | null })?.guestEmail ||
+          bookingDetails?.user?.email;
+
+        if (bookingDetails && recipientEmail) {
+          const emailHtml =
+            generateBookingConfirmedEmailTemplate(bookingDetails);
+          await emailSender(
+            "Booking Confirmed Successfully",
+            recipientEmail,
+            emailHtml,
+          );
         }
       } catch (emailError) {
         console.error("Error sending booking confirmation email:", emailError);
