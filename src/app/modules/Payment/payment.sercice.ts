@@ -486,13 +486,37 @@ const cancelStripeBooking = async (
     throw new ApiError(httpStatus.BAD_REQUEST, "Cannot cancel a completed booking");
   }
 
-  // Check if booking was created more than 3 hours ago
+  // 3-hour limit before travel start check
+  const departureDate = new Date(booking.travelDate);
+  let startStr = "";
+  if (booking.timeSlot) {
+    if (typeof booking.timeSlot === "string") {
+      startStr = booking.timeSlot.split("-")[0].trim();
+    } else if (typeof booking.timeSlot === "object") {
+      const ts = booking.timeSlot as any;
+      if (ts.start) {
+        startStr = ts.start;
+      }
+    }
+  }
+
+  if (startStr) {
+    const match = startStr.match(/(\d+):(\d+)/);
+    if (match) {
+      const hours = parseInt(match[1], 10);
+      const minutes = parseInt(match[2], 10);
+      departureDate.setUTCHours(hours, minutes, 0, 0);
+    }
+  } else {
+    departureDate.setUTCHours(0, 0, 0, 0);
+  }
+
   const threeHoursInMs = 3 * 60 * 60 * 1000;
-  const timeDiff = Date.now() - new Date(booking.createdAt).getTime();
-  if (timeDiff > threeHoursInMs) {
+  const timeDiff = departureDate.getTime() - Date.now();
+  if (timeDiff < threeHoursInMs) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
-      "Booking cancellation is only allowed within 3 hours of booking creation."
+      "Booking cancellation is only allowed at least 3 hours before the travel time starts."
     );
   }
 
