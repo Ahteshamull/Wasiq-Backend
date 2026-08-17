@@ -62,26 +62,33 @@ const createTripServiceBooking = async (
     });
   }
 
-  // 2. If NOT logged in but guestInfo is provided, create or resolve the guest user
-  if (!findUser && guestInfo) {
-    isGuestUser = true;
+  // 2. If guestInfo is provided, create or resolve the guest user
+  if (guestInfo) {
     const existingUser = await prisma.user.findUnique({
       where: { email: guestInfo.email },
     });
 
+    let guestUser: User;
     if (existingUser) {
-      findUser = existingUser;
-      finalUserId = existingUser.id;
+      guestUser = existingUser;
     } else {
-      findUser = await prisma.user.create({
+      guestUser = await prisma.user.create({
         data: {
           fullName: `${guestInfo.firstName} ${guestInfo.lastName}`,
           email: guestInfo.email,
           contactNumber: guestInfo.phoneNumber,
           role: UserRole.USER,
+          createdById: findUser?.role === UserRole.AGENT ? findUser.id : undefined,
         },
       });
-      finalUserId = findUser.id;
+    }
+
+    finalUserId = guestUser.id;
+
+    // If there was no logged-in user, treat this as a guest booking flow
+    if (!findUser) {
+      isGuestUser = true;
+      findUser = guestUser;
     }
   }
 

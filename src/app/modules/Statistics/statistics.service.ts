@@ -217,6 +217,7 @@ const getAgentTotalEarningsAndBookings = async (
       OR: [
         { tripService: { userId } },
         { user: { createdById: userId } },
+        { userId },
       ],
       status: {
         in: [BookingStatus.CONFIRMED, BookingStatus.COMPLETED],
@@ -238,6 +239,7 @@ const getAgentTotalEarningsAndBookings = async (
         OR: [
           { tripService: { userId } },
           { user: { createdById: userId } },
+          { userId },
         ],
       },
       ...(dateRange && { createdAt: dateRange }),
@@ -312,6 +314,7 @@ const getAgentTotalEarningsAndBookings = async (
       OR: [
         { tripService: { userId } },
         { user: { createdById: userId } },
+        { userId },
       ],
       status: {
         in: [BookingStatus.CONFIRMED, BookingStatus.COMPLETED],
@@ -400,6 +403,7 @@ const getAgentBookings = async (
       OR: [
         { tripService: { userId } },
         { user: { createdById: userId } },
+        { userId },
       ],
       status: {
         in: [BookingStatus.CONFIRMED, BookingStatus.COMPLETED],
@@ -414,6 +418,7 @@ const getAgentBookings = async (
       OR: [
         { tripService: { userId } },
         { user: { createdById: userId } },
+        { userId },
       ],
       status: BookingStatus.CONFIRMED,
       ...(dateRange && { createdAt: dateRange }),
@@ -425,6 +430,7 @@ const getAgentBookings = async (
       OR: [
         { tripService: { userId } },
         { user: { createdById: userId } },
+        { userId },
       ],
       status: BookingStatus.COMPLETED,
       ...(dateRange && { createdAt: dateRange }),
@@ -439,6 +445,7 @@ const getAgentBookings = async (
         OR: [
           { tripService: { userId } },
           { user: { createdById: userId } },
+          { userId },
         ],
       },
       ...(dateRange && { createdAt: dateRange }),
@@ -457,6 +464,7 @@ const getAgentBookings = async (
       OR: [
         { tripService: { userId } },
         { user: { createdById: userId } },
+        { userId },
       ],
       ...(status ? { status: status as BookingStatus } : {}),
     },
