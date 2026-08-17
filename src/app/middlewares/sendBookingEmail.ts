@@ -14,8 +14,9 @@ export const sendBookingEmail = async (req: Request, res: Response, next: NextFu
     return next();
   }
 
-
-  next();
+  // Do not call next() here because the response has already been sent in the controller.
+  // Calling next() would trigger the 404 middleware and throw "Cannot set headers after they are sent" error,
+  // which can interrupt the asynchronous email sending process.
 
   try {
     const { user, tripService, from, to, travelDate, timeSlot, passengers, serviceType, totalPrice } = result;

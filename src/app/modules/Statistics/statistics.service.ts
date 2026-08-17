@@ -214,7 +214,10 @@ const getAgentTotalEarningsAndBookings = async (
   // monthly bookings data
   const monthlyBookingsData = await prisma.tripServiceBooking.findMany({
     where: {
-      userId,
+      OR: [
+        { tripService: { userId } },
+        { user: { createdById: userId } },
+      ],
       status: {
         in: [BookingStatus.CONFIRMED, BookingStatus.COMPLETED],
       },
@@ -231,7 +234,12 @@ const getAgentTotalEarningsAndBookings = async (
   const monthlyEarningsData = await prisma.payment.findMany({
     where: {
       status: PaymentStatus.PAID,
-      userId,
+      tripServiceBooking: {
+        OR: [
+          { tripService: { userId } },
+          { user: { createdById: userId } },
+        ],
+      },
       ...(dateRange && { createdAt: dateRange }),
     },
     select: {
@@ -301,7 +309,10 @@ const getAgentTotalEarningsAndBookings = async (
   // recent bookings
   const recentBookings = await prisma.tripServiceBooking.findMany({
     where: {
-      userId,
+      OR: [
+        { tripService: { userId } },
+        { user: { createdById: userId } },
+      ],
       status: {
         in: [BookingStatus.CONFIRMED, BookingStatus.COMPLETED],
       },
@@ -386,7 +397,10 @@ const getAgentBookings = async (
   // total bookings
   const totalBookings = await prisma.tripServiceBooking.count({
     where: {
-      userId,
+      OR: [
+        { tripService: { userId } },
+        { user: { createdById: userId } },
+      ],
       status: {
         in: [BookingStatus.CONFIRMED, BookingStatus.COMPLETED],
       },
@@ -397,7 +411,10 @@ const getAgentBookings = async (
   // total confirmed booking
   const totalConfirmedBookings = await prisma.tripServiceBooking.count({
     where: {
-      userId,
+      OR: [
+        { tripService: { userId } },
+        { user: { createdById: userId } },
+      ],
       status: BookingStatus.CONFIRMED,
       ...(dateRange && { createdAt: dateRange }),
     },
@@ -405,7 +422,10 @@ const getAgentBookings = async (
   // total completed booking
   const totalCompletedBookings = await prisma.tripServiceBooking.count({
     where: {
-      userId,
+      OR: [
+        { tripService: { userId } },
+        { user: { createdById: userId } },
+      ],
       status: BookingStatus.COMPLETED,
       ...(dateRange && { createdAt: dateRange }),
     },
@@ -415,7 +435,12 @@ const getAgentBookings = async (
   const totalEarnings = await prisma.payment.aggregate({
     where: {
       status: PaymentStatus.PAID,
-      userId,
+      tripServiceBooking: {
+        OR: [
+          { tripService: { userId } },
+          { user: { createdById: userId } },
+        ],
+      },
       ...(dateRange && { createdAt: dateRange }),
     },
     _sum: {
@@ -429,7 +454,10 @@ const getAgentBookings = async (
   // recent bookings for agent (last 10)
   const recentBookings = await prisma.tripServiceBooking.findMany({
     where: {
-      userId,
+      OR: [
+        { tripService: { userId } },
+        { user: { createdById: userId } },
+      ],
       ...(status ? { status: status as BookingStatus } : {}),
     },
     select: {
