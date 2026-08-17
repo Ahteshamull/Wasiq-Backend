@@ -7,6 +7,7 @@ import {
   ServiceStatus,
   Prisma,
   UserRole,
+  User,
 } from "@prisma/client";
 import ApiError from "../../../errors/ApiErrors";
 import httpStatus from "http-status";
@@ -51,17 +52,10 @@ const createTripServiceBooking = async (
 
   // Handle User identification (Authenticated or Guest)
   let finalUserId = userId;
-  let findUser: any = null;
+  let findUser: User | null = null;
   let isGuestUser = false;
 
-  if (userId && /^[0-9a-fA-F]{24}$/.test(userId)) {
-    findUser = await prisma.user.findUnique({
-      where: { id: userId },
-    });
-  }
-
-  // If not logged in but guest info provided, create or use existing guest user
-  if (!findUser && guestInfo) {
+  if (guestInfo) {
     isGuestUser = true;
     const existingUser = await prisma.user.findUnique({
       where: { email: guestInfo.email },
@@ -70,17 +64,51 @@ const createTripServiceBooking = async (
     if (existingUser) {
       findUser = existingUser;
       finalUserId = existingUser.id;
+
+      // Link guest user to the logged-in agent/admin if they aren't linked yet
+      if (!existingUser.createdById && userId && /^[0-9a-fA-F]{24}$/.test(userId)) {
+        const creator = await prisma.user.findUnique({ where: { id: userId } });
+        if (
+          creator &&
+          (creator.role === UserRole.AGENT ||
+            creator.role === UserRole.ADMIN ||
+            creator.role === UserRole.SUPER_ADMIN)
+        ) {
+          await prisma.user.update({
+            where: { id: existingUser.id },
+            data: { createdById: creator.id },
+          });
+        }
+      }
     } else {
+      let createdByAgentId: string | null = null;
+      if (userId && /^[0-9a-fA-F]{24}$/.test(userId)) {
+        const creator = await prisma.user.findUnique({ where: { id: userId } });
+        if (
+          creator &&
+          (creator.role === UserRole.AGENT ||
+            creator.role === UserRole.ADMIN ||
+            creator.role === UserRole.SUPER_ADMIN)
+        ) {
+          createdByAgentId = creator.id;
+        }
+      }
+
       findUser = await prisma.user.create({
         data: {
           fullName: `${guestInfo.firstName} ${guestInfo.lastName}`,
           email: guestInfo.email,
           contactNumber: guestInfo.phoneNumber,
           role: UserRole.USER,
+          createdById: createdByAgentId,
         },
       });
       finalUserId = findUser.id;
     }
+  } else if (userId && /^[0-9a-fA-F]{24}$/.test(userId)) {
+    findUser = await prisma.user.findUnique({
+      where: { id: userId },
+    });
   }
 
   if (!findUser) {

@@ -132,8 +132,21 @@ const createStripeCheckoutSession = async (
   }
 
   // ownership check (only if authenticated)
-  if (userId && booking.userId !== userId) {
-    throw new ApiError(httpStatus.FORBIDDEN, "Unauthorized booking");
+  if (userId) {
+    const loggedInUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    });
+
+    const isBookingOwner = booking.userId === userId;
+    const isAdmin =
+      loggedInUser?.role === UserRole.ADMIN ||
+      loggedInUser?.role === UserRole.SUPER_ADMIN;
+    const isAgent = loggedInUser?.role === UserRole.AGENT;
+
+    if (!isBookingOwner && !isAdmin && !isAgent) {
+      throw new ApiError(httpStatus.FORBIDDEN, "Unauthorized booking");
+    }
   }
 
   const finalUserId = booking.userId;
