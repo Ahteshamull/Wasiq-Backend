@@ -1,3 +1,23 @@
+const formatTimeSlot = (timeSlot: any): string => {
+  if (!timeSlot) return "";
+  if (typeof timeSlot === "string") return timeSlot;
+  if (typeof timeSlot === "object") {
+    const start = timeSlot.start;
+    const end = timeSlot.end;
+    if (start && end) {
+      return start === end ? start : `${start} - ${end}`;
+    }
+    if (start) return start;
+    if (end) return end;
+    try {
+      return JSON.stringify(timeSlot);
+    } catch {
+      return "";
+    }
+  }
+  return "";
+};
+
 export const generateBookingCreatedUserEmailTemplate = (booking: any): string => {
   const bookingTitle = booking.tripService?.title || `${booking.from} to ${booking.to}`;
   return `
@@ -8,7 +28,7 @@ export const generateBookingCreatedUserEmailTemplate = (booking: any): string =>
       <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
         <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>From:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.from}</td></tr>
         <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>To:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.to}</td></tr>
-        <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Date:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.travelDate} ${booking.timeSlot ? `at ${booking.timeSlot}` : ""}</td></tr>
+        <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Date:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.travelDate} ${booking.timeSlot ? `at ${formatTimeSlot(booking.timeSlot)}` : ""}</td></tr>
         <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Passengers:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.passengers}</td></tr>
         <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Service Type:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.serviceType}</td></tr>
         <tr><td style="padding: 8px; font-weight: bold; color: #333;">Total Price:</td><td style="padding: 8px; font-weight: bold; color: #333;">$${booking.totalPrice}</td></tr>
@@ -28,7 +48,7 @@ export const generateBookingCreatedAdminEmailTemplate = (booking: any): string =
         <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Service:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${bookingTitle}</td></tr>
         <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>From:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.from}</td></tr>
         <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>To:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.to}</td></tr>
-        <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Date:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.travelDate} ${booking.timeSlot ? `at ${booking.timeSlot}` : ""}</td></tr>
+        <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Date:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.travelDate} ${booking.timeSlot ? `at ${formatTimeSlot(booking.timeSlot)}` : ""}</td></tr>
         <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Passengers:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.passengers}</td></tr>
         <tr><td style="padding: 8px; font-weight: bold; color: #333;">Total Price:</td><td style="padding: 8px; font-weight: bold; color: #333;">$${booking.totalPrice}</td></tr>
       </table>
@@ -47,7 +67,7 @@ export const generateBookingConfirmedEmailTemplate = (booking: any): string => {
         <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Booking ID:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.id}</td></tr>
         <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>From:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.from}</td></tr>
         <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>To:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.to}</td></tr>
-        <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Date & Time:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.travelDate} ${booking.timeSlot ? `at ${booking.timeSlot}` : ""}</td></tr>
+        <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Date & Time:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.travelDate} ${booking.timeSlot ? `at ${formatTimeSlot(booking.timeSlot)}` : ""}</td></tr>
         <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Passengers:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.passengers}</td></tr>
         <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Service Type:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.serviceType}</td></tr>
         <tr><td style="padding: 8px; font-weight: bold; color: #4CAF50;">Amount Paid:</td><td style="padding: 8px; font-weight: bold; color: #4CAF50;">$${booking.totalPrice}</td></tr>

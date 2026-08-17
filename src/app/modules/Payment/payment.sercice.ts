@@ -25,53 +25,74 @@ const stripeAccountOnboarding = async (userId: string) => {
 
   // if user already has stripe account
   if (user.stripeAccountId) {
-    const account = await stripe.accounts.retrieve(user.stripeAccountId);
+    try {
+      const account = await stripe.accounts.retrieve(user.stripeAccountId);
 
-    const cardPayments = account.capabilities?.card_payments;
-    const transfers = account.capabilities?.transfers;
-    const requirements = account.requirements?.currently_due || [];
+      const cardPayments = account.capabilities?.card_payments;
+      const transfers = account.capabilities?.transfers;
+      const requirements = account.requirements?.currently_due || [];
 
-    // if verified
-    if (cardPayments === "active" && transfers === "active") {
-      // update DB to mark as connected
+      // if verified
+      if (cardPayments === "active" && transfers === "active") {
+        // update DB to mark as connected
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { isStripeConnected: true },
+        });
+
+        return {
+          status: "verified",
+          message: "Stripe account verified successfully.",
+          capabilities: account.capabilities,
+        };
+      }
+
+      // if not verified → generate onboarding link
+      const accountLinks = await stripe.accountLinks.create({
+        account: user.stripeAccountId,
+        refresh_url: `${config.stripe.refreshUrl}?accountId=${user.stripeAccountId}`,
+        return_url: `${config.stripe.returnUrl}?accountId=${user.stripeAccountId}`,
+        type: "account_onboarding",
+      });
+
+      // update DB to store stripeAccountId & mark connected
       await prisma.user.update({
         where: { id: user.id },
-        data: { isStripeConnected: true },
+        data: {
+          stripeAccountId: user.stripeAccountId,
+          isStripeConnected: true,
+        },
       });
 
       return {
-        status: "verified",
-        message: "Stripe account verified successfully.",
-        capabilities: account.capabilities,
+        status: requirements.length > 0 ? "requirements_due" : "pending",
+        message:
+          requirements.length > 0
+            ? "Additional information required for Stripe verification."
+            : "Your Stripe account verification is under review.",
+        requirements,
+        onboardingLink: accountLinks.url,
       };
+    } catch (error: any) {
+      // If Stripe returns an invalid account error or permission error, reset stripeAccountId in DB and proceed to create a new one.
+      if (
+        error.code === "account_invalid" ||
+        error.statusCode === 403 ||
+        error.message?.includes("does not have access to account")
+      ) {
+        console.warn(`Stripe account ${user.stripeAccountId} is invalid or inaccessible for this API key. Resetting and creating a new one.`);
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            stripeAccountId: null,
+            isStripeConnected: false,
+          },
+        });
+        // We do NOT return here, so it falls through to the creation logic below!
+      } else {
+        throw error;
+      }
     }
-
-    // if not verified → generate onboarding link
-    const accountLinks = await stripe.accountLinks.create({
-      account: user.stripeAccountId,
-      refresh_url: `${config.stripe.refreshUrl}?accountId=${user.stripeAccountId}`,
-      return_url: `${config.stripe.returnUrl}?accountId=${user.stripeAccountId}`,
-      type: "account_onboarding",
-    });
-
-    // update DB to store stripeAccountId & mark connected
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        stripeAccountId: user.stripeAccountId,
-        isStripeConnected: true,
-      },
-    });
-
-    return {
-      status: requirements.length > 0 ? "requirements_due" : "pending",
-      message:
-        requirements.length > 0
-          ? "Additional information required for Stripe verification."
-          : "Your Stripe account verification is under review.",
-      requirements,
-      onboardingLink: accountLinks.url,
-    };
   }
 
   // if user has no stripe account → create new account
