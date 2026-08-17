@@ -913,16 +913,28 @@ const getAdminTotalEarnings = async (options: IPaginationOptions) => {
 };
 
 // admin booking
-const getAdminTotalBookings = async (options: IPaginationOptions) => {
+const getAdminTotalBookings = async (options: IPaginationOptions & { status?: string }) => {
   const { page, limit, skip } = paginationHelpers.calculatedPagination(options);
+  const { status } = options;
+
+  if (status) {
+    const validStatuses = Object.values(BookingStatus);
+    if (!validStatuses.includes(status as BookingStatus)) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Invalid booking status");
+    }
+  }
+
+  const where = status
+    ? { status: status as BookingStatus }
+    : {
+        status: {
+          in: [BookingStatus.CONFIRMED, BookingStatus.COMPLETED],
+        },
+      };
 
   // total payments
   const totalBookings = await prisma.tripServiceBooking.count({
-    where: {
-      status: {
-        in: [BookingStatus.CONFIRMED, BookingStatus.COMPLETED],
-      },
-    },
+    where,
   });
 
   // completed rides
@@ -936,11 +948,7 @@ const getAdminTotalBookings = async (options: IPaginationOptions) => {
 
   // total bookings database info
   const bookingInfo = await prisma.tripServiceBooking.findMany({
-    where: {
-      status: {
-        in: [BookingStatus.CONFIRMED, BookingStatus.COMPLETED],
-      },
-    },
+    where,
     include: {
       user: {
         select: {

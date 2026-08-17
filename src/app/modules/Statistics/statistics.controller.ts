@@ -119,7 +119,7 @@ const getAdminTotalEarnings = catchAsync(
 // admin booking
 const getAdminTotalBookings = catchAsync(
   async (req: Request, res: Response) => {
-    const options = pick(req.query, paginationFields);
+    const options = pick(req.query, [...paginationFields, "status"]);
 
     const result = await StatisticsService.getAdminTotalBookings(options);
 
