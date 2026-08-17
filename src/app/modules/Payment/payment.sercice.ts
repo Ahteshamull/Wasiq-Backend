@@ -339,9 +339,7 @@ const stripeHandleWebhook = async (event: Stripe.Event) => {
           },
         });
 
-        const recipientEmail =
-          (bookingDetails as unknown as { guestEmail?: string | null })?.guestEmail ||
-          bookingDetails?.user?.email;
+        const recipientEmail = bookingDetails?.user?.email;
 
         if (bookingDetails && recipientEmail) {
           const emailHtml =

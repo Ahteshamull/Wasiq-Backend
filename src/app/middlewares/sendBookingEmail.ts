@@ -19,8 +19,8 @@ export const sendBookingEmail = async (req: Request, res: Response, next: NextFu
   // which can interrupt the asynchronous email sending process.
 
   try {
-    const { user, guestEmail, tripService, from, to, travelDate, timeSlot, passengers, serviceType, totalPrice } = result;
-    const recipientEmail = guestEmail || user?.email;
+    const { user, tripService, from, to, travelDate, timeSlot, passengers, serviceType, totalPrice } = result;
+    const recipientEmail = user?.email;
 
     // Generate Email Content for User
     const userEmailContent = generateBookingCreatedUserEmailTemplate(result);

@@ -183,8 +183,6 @@ const createTripServiceBooking = async (
     const booking = await tx.tripServiceBooking.create({
       data: {
         clientName,
-        guestEmail: guestInfo?.email || null,
-        guestPhone: guestInfo?.phoneNumber || null,
         from,
         fromLat,
         fromLng,
