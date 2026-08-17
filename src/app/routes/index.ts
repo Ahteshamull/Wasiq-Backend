@@ -42,6 +42,10 @@ const moduleRoutes = [
     path: "/trip-service-booking",
     route: tripServiceBookingRoute,
   },
+  {
+    path: "/trip-service-bookings",
+    route: tripServiceBookingRoute,
+  },
 
   {
     path: "/vehicles",
