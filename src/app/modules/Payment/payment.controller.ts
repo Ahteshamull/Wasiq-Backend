@@ -90,20 +90,21 @@ const stripeHandleWebhook = catchAsync(async (req: Request, res: Response) => {
 
 // stripe cancel booking
 const cancelStripeBooking = catchAsync(async (req, res) => {
-  const { serviceType, bookingId } = req.params;
+  const { tripServiceBookingId } = req.params;
   const userId = req.user?.id;
+  const userRole = req.user?.role;
 
-  // const result = await PaymentService.cancelStripeBooking(
-  //   serviceType,
-  //   bookingId,
-  //   userId
-  // );
+  const result = await PaymentService.cancelStripeBooking(
+    tripServiceBookingId,
+    userId,
+    userRole
+  );
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Booking cancelled successfully",
-    data: "",
+    message: "Booking cancelled and refunded successfully",
+    data: result,
   });
 });
 

@@ -1,5 +1,5 @@
 import prisma from "../../../shared/prisma";
-import { ReviewStatus } from "@prisma/client";
+import { ReviewStatus, BookingStatus } from "@prisma/client";
 import ApiError from "../../../errors/ApiErrors";
 import httpStatus from "http-status";
 
@@ -29,6 +29,25 @@ const createTripServiceReview = async (
   });
   if (!service) {
     throw new ApiError(httpStatus.NOT_FOUND, "Room not found");
+  }
+
+  // check if user or agent has a completed booking for this service
+  const completedBooking = await prisma.tripServiceBooking.findFirst({
+    where: {
+      tripServiceId,
+      status: BookingStatus.COMPLETED,
+      OR: [
+        { userId },
+        { user: { createdById: userId } }
+      ]
+    }
+  });
+
+  if (!completedBooking) {
+    throw new ApiError(
+      httpStatus.FORBIDDEN,
+      "You can only review services for which you have completed bookings."
+    );
   }
 
   const review = await prisma.review.create({

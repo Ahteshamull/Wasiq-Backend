@@ -1,3 +1,31 @@
+// ১. কাস্টম ইউনিক বুকিং আইডি জেনারেটর
+const generateCustomBookingId = (booking: any): string => {
+  const service = (booking.serviceType || "BKG").substring(0, 3).toUpperCase();
+  const cleanFrom = (booking.from || "").replace(/[^a-zA-Z]/g, "").substring(0, 3).toUpperCase();
+  const cleanTo = (booking.to || "").replace(/[^a-zA-Z]/g, "").substring(0, 3).toUpperCase();
+  const fromLoc = cleanFrom.length >= 2 ? cleanFrom : "LOC";
+  const toLoc = cleanTo.length >= 2 ? cleanTo : "LOC";
+  const idPart = booking.id ? booking.id.substring(booking.id.length - 6).toUpperCase() : "XXXXXX";
+  return `${service}-${fromLoc}-${toLoc}-${idPart}`;
+};
+
+// ২. ডেট ফরম্যাটার হেল্পার
+const formatDate = (date: any): string => {
+  if (!date) return "";
+  try {
+    const d = new Date(date);
+    return d.toLocaleDateString("en-US", {
+      weekday: "short",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  } catch {
+    return String(date);
+  }
+};
+
+// ৩. টাইম স্লট ফরম্যাটার হেল্পার
 const formatTimeSlot = (timeSlot: any): string => {
   if (!timeSlot) return "";
   if (typeof timeSlot === "string") return timeSlot;
@@ -21,19 +49,105 @@ const formatTimeSlot = (timeSlot: any): string => {
 export const generateBookingCreatedUserEmailTemplate = (booking: any): string => {
   const bookingTitle = booking.tripService?.title || `${booking.from} to ${booking.to}`;
   return `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-      <h2 style="color: #4CAF50; text-align: center;">Booking Created</h2>
-      <p>Dear <strong>${booking.clientName || booking.user?.fullName || "Valued Customer"}</strong>,</p>
-      <p>Your booking for <strong>${bookingTitle}</strong> has been created successfully (Payment Pending).</p>
-      <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
-        <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>From:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.from}</td></tr>
-        <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>To:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.to}</td></tr>
-        <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Date:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.travelDate} ${booking.timeSlot ? `at ${formatTimeSlot(booking.timeSlot)}` : ""}</td></tr>
-        <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Passengers:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.passengers}</td></tr>
-        <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Service Type:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.serviceType}</td></tr>
-        <tr><td style="padding: 8px; font-weight: bold; color: #333;">Total Price:</td><td style="padding: 8px; font-weight: bold; color: #333;">$${booking.totalPrice}</td></tr>
-      </table>
-      <p style="margin-top: 20px;">Thank you for choosing our service! Please complete your payment to confirm your booking.</p>
+    <div style="background-color: #f5f7fa; padding: 30px 15px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #334155; line-height: 1.6; min-height: 100%;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+        
+        <!-- Header -->
+        <div style="background-color: #0f294a; padding: 25px 30px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1.5px;">WASIK TRANSFERS</h1>
+          <p style="color: #94a3b8; margin: 5px 0 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 2px;">Professional Transfer & Booking</p>
+        </div>
+
+        <div style="padding: 30px;">
+          <!-- Headline / Greeting -->
+          <div style="text-align: center; margin-bottom: 25px;">
+            <span style="background-color: #fef3c7; color: #d97706; padding: 6px 14px; border-radius: 50px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Booking Pending Payment</span>
+            <h2 style="color: #0f294a; margin: 15px 0 5px 0; font-size: 20px;">Booking Created Successfully!</h2>
+            <p style="margin: 0; font-size: 14px; color: #64748b;">Dear <strong>${booking.clientName || booking.user?.fullName || "Valued Customer"}</strong>, your transfer booking is ready. Please complete payment to confirm.</p>
+          </div>
+
+          <!-- Grid Info (Outlook-friendly table) -->
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 25px;">
+            <tr>
+              <td width="48%" valign="top" style="background-color: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #edf2f7;">
+                <h4 style="margin: 0 0 8px 0; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Booking Details</h4>
+                <p style="margin: 0 0 4px 0; font-size: 13px;"><strong>Date:</strong> ${formatDate(booking.travelDate)}</p>
+                <p style="margin: 0 0 4px 0; font-size: 13px;"><strong>Time:</strong> ${booking.timeSlot ? formatTimeSlot(booking.timeSlot) : "N/A"}</p>
+                <p style="margin: 0 0 4px 0; font-size: 13px;"><strong>Passengers:</strong> ${booking.passengers} Pax</p>
+                <p style="margin: 0; font-size: 13px;"><strong>Service:</strong> ${booking.serviceType}</p>
+              </td>
+              <td width="4%">&nbsp;</td>
+              <td width="48%" valign="top" style="background-color: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #edf2f7;">
+                <h4 style="margin: 0 0 8px 0; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Booking Invoice</h4>
+                <p style="margin: 0 0 4px 0; font-size: 13px;"><strong>Booking ID:</strong> <span style="font-family: monospace; font-weight: bold; color: #0f294a;">${generateCustomBookingId(booking)}</span></p>
+                <p style="margin: 0 0 4px 0; font-size: 13px;"><strong>Booking Date:</strong> ${formatDate(new Date())}</p>
+                <p style="margin: 0 0 4px 0; font-size: 13px;"><strong>Status:</strong> <span style="color: #d97706; font-weight: 600;">Pending</span></p>
+                <p style="margin: 0; font-size: 13px;"><strong>Trip Name:</strong> ${bookingTitle}</p>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Route Info -->
+          <div style="background-color: #f8fafc; padding: 15px 20px; border-radius: 10px; border: 1px solid #edf2f7; margin-bottom: 25px;">
+            <h4 style="margin: 0 0 10px 0; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Trip Route</h4>
+            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td width="40%" style="font-size: 13px; font-weight: 600; color: #0f294a; line-height: 1.4;">${booking.from}</td>
+                <td width="20%" align="center" style="font-size: 18px; color: #64748b;">➔</td>
+                <td width="40%" style="font-size: 13px; font-weight: 600; color: #0f294a; text-align: right; line-height: 1.4;">${booking.to}</td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- Pricing Table -->
+          <h4 style="margin: 0 0 10px 0; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Price Breakdown</h4>
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin-bottom: 25px;">
+            <thead>
+              <tr style="background-color: #0f294a; color: #ffffff;">
+                <th align="left" style="padding: 10px 12px; font-size: 12px; border-top-left-radius: 6px; border-bottom-left-radius: 6px;">Description</th>
+                <th align="right" style="padding: 10px 12px; font-size: 12px; border-top-right-radius: 6px; border-bottom-right-radius: 6px;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${booking.basePrice ? `
+              <tr>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px;">Base Price (Route)</td>
+                <td align="right" style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 600;">$${booking.basePrice}</td>
+              </tr>
+              ` : ""}
+              ${booking.vehiclePrice ? `
+              <tr>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px;">Vehicle Class Fee</td>
+                <td align="right" style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 600;">$${booking.vehiclePrice}</td>
+              </tr>
+              ` : ""}
+              ${booking.stoppagePrice ? `
+              <tr>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px;">Stoppages/Stops Fee</td>
+                <td align="right" style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 600;">$${booking.stoppagePrice}</td>
+              </tr>
+              ` : ""}
+              ${booking.returnPrice ? `
+              <tr>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px;">Return Journey Fee</td>
+                <td align="right" style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 600;">$${booking.returnPrice}</td>
+              </tr>
+              ` : ""}
+              <tr style="background-color: #f8fafc;">
+                <td style="padding: 12px; font-weight: bold; color: #0f294a; font-size: 14px; border-bottom-left-radius: 6px; border-top-left-radius: 6px;">Total Price (USD)</td>
+                <td align="right" style="padding: 12px; font-weight: bold; color: #0f294a; font-size: 16px; border-bottom-right-radius: 6px; border-top-right-radius: 6px;">$${booking.totalPrice}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Footer/Brand Support -->
+          <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center; font-size: 12px; color: #94a3b8;">
+            <p style="margin: 0 0 5px 0;">If you have any questions regarding your booking, please reach out to our customer support.</p>
+            <p style="margin: 0; font-weight: 600; color: #0f294a;">Wasik Support | info@wasiktransfers.com</p>
+          </div>
+        </div>
+
+      </div>
     </div>
   `;
 };
@@ -41,17 +155,105 @@ export const generateBookingCreatedUserEmailTemplate = (booking: any): string =>
 export const generateBookingCreatedAdminEmailTemplate = (booking: any): string => {
   const bookingTitle = booking.tripService?.title || `${booking.from} to ${booking.to}`;
   return `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-      <h2 style="color: #FF5722; text-align: center;">New Booking Received</h2>
-      <p>A new booking has been placed by <strong>${booking.clientName || booking.user?.fullName || "Guest User"}</strong> (${booking.user?.email || "No Email"}).</p>
-      <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
-        <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Service:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${bookingTitle}</td></tr>
-        <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>From:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.from}</td></tr>
-        <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>To:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.to}</td></tr>
-        <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Date:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.travelDate} ${booking.timeSlot ? `at ${formatTimeSlot(booking.timeSlot)}` : ""}</td></tr>
-        <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Passengers:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.passengers}</td></tr>
-        <tr><td style="padding: 8px; font-weight: bold; color: #333;">Total Price:</td><td style="padding: 8px; font-weight: bold; color: #333;">$${booking.totalPrice}</td></tr>
-      </table>
+    <div style="background-color: #f5f7fa; padding: 30px 15px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #334155; line-height: 1.6; min-height: 100%;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+        
+        <!-- Header -->
+        <div style="background-color: #0f294a; padding: 25px 30px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1.5px;">WASIK TRANSFERS</h1>
+          <p style="color: #94a3b8; margin: 5px 0 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 2px;">Professional Transfer & Booking</p>
+        </div>
+
+        <div style="padding: 30px;">
+          <!-- Headline / Greeting -->
+          <div style="text-align: center; margin-bottom: 25px;">
+            <span style="background-color: #e0f2fe; color: #0369a1; padding: 6px 14px; border-radius: 50px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">New Booking Received</span>
+            <h2 style="color: #0f294a; margin: 15px 0 5px 0; font-size: 20px;">New Booking Details</h2>
+            <p style="margin: 0; font-size: 14px; color: #64748b;">A new booking has been created on Wasik Transfers by <strong>${booking.clientName || booking.user?.fullName || "Guest User"}</strong> (${booking.user?.email || "No Email"}).</p>
+          </div>
+
+          <!-- Grid Info (Outlook-friendly table) -->
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 25px;">
+            <tr>
+              <td width="48%" valign="top" style="background-color: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #edf2f7;">
+                <h4 style="margin: 0 0 8px 0; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Booking Details</h4>
+                <p style="margin: 0 0 4px 0; font-size: 13px;"><strong>Date:</strong> ${formatDate(booking.travelDate)}</p>
+                <p style="margin: 0 0 4px 0; font-size: 13px;"><strong>Time:</strong> ${booking.timeSlot ? formatTimeSlot(booking.timeSlot) : "N/A"}</p>
+                <p style="margin: 0 0 4px 0; font-size: 13px;"><strong>Passengers:</strong> ${booking.passengers} Pax</p>
+                <p style="margin: 0; font-size: 13px;"><strong>Service:</strong> ${booking.serviceType}</p>
+              </td>
+              <td width="4%">&nbsp;</td>
+              <td width="48%" valign="top" style="background-color: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #edf2f7;">
+                <h4 style="margin: 0 0 8px 0; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Booking Invoice</h4>
+                <p style="margin: 0 0 4px 0; font-size: 13px;"><strong>Booking ID:</strong> <span style="font-family: monospace; font-weight: bold; color: #0f294a;">${generateCustomBookingId(booking)}</span></p>
+                <p style="margin: 0 0 4px 0; font-size: 13px;"><strong>Booking Date:</strong> ${formatDate(new Date())}</p>
+                <p style="margin: 0 0 4px 0; font-size: 13px;"><strong>Status:</strong> <span style="color: #0369a1; font-weight: 600;">Pending</span></p>
+                <p style="margin: 0; font-size: 13px;"><strong>Trip Name:</strong> ${bookingTitle}</p>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Route Info -->
+          <div style="background-color: #f8fafc; padding: 15px 20px; border-radius: 10px; border: 1px solid #edf2f7; margin-bottom: 25px;">
+            <h4 style="margin: 0 0 10px 0; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Trip Route</h4>
+            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td width="40%" style="font-size: 13px; font-weight: 600; color: #0f294a; line-height: 1.4;">${booking.from}</td>
+                <td width="20%" align="center" style="font-size: 18px; color: #64748b;">➔</td>
+                <td width="40%" style="font-size: 13px; font-weight: 600; color: #0f294a; text-align: right; line-height: 1.4;">${booking.to}</td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- Pricing Table -->
+          <h4 style="margin: 0 0 10px 0; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Price Breakdown</h4>
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin-bottom: 25px;">
+            <thead>
+              <tr style="background-color: #0f294a; color: #ffffff;">
+                <th align="left" style="padding: 10px 12px; font-size: 12px; border-top-left-radius: 6px; border-bottom-left-radius: 6px;">Description</th>
+                <th align="right" style="padding: 10px 12px; font-size: 12px; border-top-right-radius: 6px; border-bottom-right-radius: 6px;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${booking.basePrice ? `
+              <tr>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px;">Base Price (Route)</td>
+                <td align="right" style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 600;">$${booking.basePrice}</td>
+              </tr>
+              ` : ""}
+              ${booking.vehiclePrice ? `
+              <tr>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px;">Vehicle Class Fee</td>
+                <td align="right" style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 600;">$${booking.vehiclePrice}</td>
+              </tr>
+              ` : ""}
+              ${booking.stoppagePrice ? `
+              <tr>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px;">Stoppages/Stops Fee</td>
+                <td align="right" style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 600;">$${booking.stoppagePrice}</td>
+              </tr>
+              ` : ""}
+              ${booking.returnPrice ? `
+              <tr>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px;">Return Journey Fee</td>
+                <td align="right" style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 600;">$${booking.returnPrice}</td>
+              </tr>
+              ` : ""}
+              <tr style="background-color: #f8fafc;">
+                <td style="padding: 12px; font-weight: bold; color: #0f294a; font-size: 14px; border-bottom-left-radius: 6px; border-top-left-radius: 6px;">Total Price (USD)</td>
+                <td align="right" style="padding: 12px; font-weight: bold; color: #0f294a; font-size: 16px; border-bottom-right-radius: 6px; border-top-right-radius: 6px;">$${booking.totalPrice}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Footer/Brand Support -->
+          <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center; font-size: 12px; color: #94a3b8;">
+            <p style="margin: 0 0 5px 0;">This is an administrative notification email generated automatically by Wasik Transfers.</p>
+            <p style="margin: 0; font-weight: 600; color: #0f294a;">Wasik Admin Panel</p>
+          </div>
+        </div>
+
+      </div>
     </div>
   `;
 };
@@ -59,20 +261,158 @@ export const generateBookingCreatedAdminEmailTemplate = (booking: any): string =
 export const generateBookingConfirmedEmailTemplate = (booking: any): string => {
   const bookingTitle = booking.tripService?.title || `${booking.from} to ${booking.to}`;
   return `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
-      <h2 style="color: #4CAF50; text-align: center;">Booking Confirmed! 🏨</h2>
-      <p>Dear <strong>${booking.clientName || booking.user?.fullName || "Valued Customer"}</strong>,</p>
-      <p>Your payment has been successfully processed and your booking for <strong>${bookingTitle}</strong> is now <strong>CONFIRMED</strong>.</p>
-      <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
-        <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Booking ID:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.id}</td></tr>
-        <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>From:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.from}</td></tr>
-        <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>To:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.to}</td></tr>
-        <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Date & Time:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.travelDate} ${booking.timeSlot ? `at ${formatTimeSlot(booking.timeSlot)}` : ""}</td></tr>
-        <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Passengers:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.passengers}</td></tr>
-        <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Service Type:</strong></td><td style="padding: 8px; border-bottom: 1px solid #ddd;">${booking.serviceType}</td></tr>
-        <tr><td style="padding: 8px; font-weight: bold; color: #4CAF50;">Amount Paid:</td><td style="padding: 8px; font-weight: bold; color: #4CAF50;">$${booking.totalPrice}</td></tr>
-      </table>
-      <p style="margin-top: 20px;">We look forward to serving you! If you have any questions, please contact our support team.</p>
+    <div style="background-color: #f5f7fa; padding: 30px 15px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #334155; line-height: 1.6; min-height: 100%;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+        
+        <!-- Header -->
+        <div style="background-color: #0f294a; padding: 25px 30px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1.5px;">WASIK TRANSFERS</h1>
+          <p style="color: #94a3b8; margin: 5px 0 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 2px;">Professional Transfer & Booking</p>
+        </div>
+
+        <div style="padding: 30px;">
+          <!-- Headline / Greeting -->
+          <div style="text-align: center; margin-bottom: 25px;">
+            <span style="background-color: #d1fae5; color: #059669; padding: 6px 14px; border-radius: 50px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Booking Confirmed</span>
+            <h2 style="color: #0f294a; margin: 15px 0 5px 0; font-size: 20px;">Booking Paid Successfully!</h2>
+            <p style="margin: 0; font-size: 14px; color: #64748b;">Dear <strong>${booking.clientName || booking.user?.fullName || "Valued Customer"}</strong>, your payment has been successfully processed and your transfer is now confirmed.</p>
+          </div>
+
+          <!-- Grid Info (Outlook-friendly table) -->
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 25px;">
+            <tr>
+              <td width="48%" valign="top" style="background-color: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #edf2f7;">
+                <h4 style="margin: 0 0 8px 0; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Booking Details</h4>
+                <p style="margin: 0 0 4px 0; font-size: 13px;"><strong>Date:</strong> ${formatDate(booking.travelDate)}</p>
+                <p style="margin: 0 0 4px 0; font-size: 13px;"><strong>Time:</strong> ${booking.timeSlot ? formatTimeSlot(booking.timeSlot) : "N/A"}</p>
+                <p style="margin: 0 0 4px 0; font-size: 13px;"><strong>Passengers:</strong> ${booking.passengers} Pax</p>
+                <p style="margin: 0; font-size: 13px;"><strong>Service:</strong> ${booking.serviceType}</p>
+              </td>
+              <td width="4%">&nbsp;</td>
+              <td width="48%" valign="top" style="background-color: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #edf2f7;">
+                <h4 style="margin: 0 0 8px 0; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Booking Invoice</h4>
+                <p style="margin: 0 0 4px 0; font-size: 13px;"><strong>Booking ID:</strong> <span style="font-family: monospace; font-weight: bold; color: #0f294a;">${generateCustomBookingId(booking)}</span></p>
+                <p style="margin: 0 0 4px 0; font-size: 13px;"><strong>Booking Date:</strong> ${formatDate(new Date())}</p>
+                <p style="margin: 0 0 4px 0; font-size: 13px;"><strong>Status:</strong> <span style="color: #059669; font-weight: 600;">Confirmed</span></p>
+                <p style="margin: 0; font-size: 13px;"><strong>Trip Name:</strong> ${bookingTitle}</p>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Route Info -->
+          <div style="background-color: #f8fafc; padding: 15px 20px; border-radius: 10px; border: 1px solid #edf2f7; margin-bottom: 25px;">
+            <h4 style="margin: 0 0 10px 0; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Trip Route</h4>
+            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td width="40%" style="font-size: 13px; font-weight: 600; color: #0f294a; line-height: 1.4;">${booking.from}</td>
+                <td width="20%" align="center" style="font-size: 18px; color: #64748b;">➔</td>
+                <td width="40%" style="font-size: 13px; font-weight: 600; color: #0f294a; text-align: right; line-height: 1.4;">${booking.to}</td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- Pricing Table -->
+          <h4 style="margin: 0 0 10px 0; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Payment Summary</h4>
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin-bottom: 25px;">
+            <thead>
+              <tr style="background-color: #0f294a; color: #ffffff;">
+                <th align="left" style="padding: 10px 12px; font-size: 12px; border-top-left-radius: 6px; border-bottom-left-radius: 6px;">Description</th>
+                <th align="right" style="padding: 10px 12px; font-size: 12px; border-top-right-radius: 6px; border-bottom-right-radius: 6px;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${booking.basePrice ? `
+              <tr>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px;">Base Price (Route)</td>
+                <td align="right" style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 600;">$${booking.basePrice}</td>
+              </tr>
+              ` : ""}
+              ${booking.vehiclePrice ? `
+              <tr>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px;">Vehicle Class Fee</td>
+                <td align="right" style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 600;">$${booking.vehiclePrice}</td>
+              </tr>
+              ` : ""}
+              ${booking.stoppagePrice ? `
+              <tr>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px;">Stoppages/Stops Fee</td>
+                <td align="right" style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 600;">$${booking.stoppagePrice}</td>
+              </tr>
+              ` : ""}
+              ${booking.returnPrice ? `
+              <tr>
+                <td style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px;">Return Journey Fee</td>
+                <td align="right" style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 600;">$${booking.returnPrice}</td>
+              </tr>
+              ` : ""}
+              <tr style="background-color: #f8fafc;">
+                <td style="padding: 12px; font-weight: bold; color: #059669; font-size: 14px; border-bottom-left-radius: 6px; border-top-left-radius: 6px;">Amount Paid (USD)</td>
+                <td align="right" style="padding: 12px; font-weight: bold; color: #059669; font-size: 16px; border-bottom-right-radius: 6px; border-top-right-radius: 6px;">$${booking.totalPrice}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Footer/Brand Support -->
+          <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center; font-size: 12px; color: #94a3b8;">
+            <p style="margin: 0 0 5px 0;">We look forward to welcoming you on board. For any questions, please contact our support.</p>
+            <p style="margin: 0; font-weight: 600; color: #0f294a;">Wasik Support | info@wasiktransfers.com</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `;
+};
+
+export const generateBookingCancelledEmailTemplate = (booking: any): string => {
+  const bookingTitle = booking.tripService?.title || `${booking.from} to ${booking.to}`;
+  return `
+    <div style="background-color: #f5f7fa; padding: 30px 15px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #334155; line-height: 1.6; min-height: 100%;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+        
+        <!-- Header -->
+        <div style="background-color: #0f294a; padding: 25px 30px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1.5px;">WASIK TRANSFERS</h1>
+          <p style="color: #94a3b8; margin: 5px 0 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 2px;">Professional Transfer & Booking</p>
+        </div>
+
+        <div style="padding: 30px;">
+          <!-- Headline / Greeting -->
+          <div style="text-align: center; margin-bottom: 25px;">
+            <span style="background-color: #fee2e2; color: #dc2626; padding: 6px 14px; border-radius: 50px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Booking Cancelled & Refunded</span>
+            <h2 style="color: #0f294a; margin: 15px 0 5px 0; font-size: 20px;">Your Booking has been Cancelled</h2>
+            <p style="margin: 0; font-size: 14px; color: #64748b;">Dear <strong>${booking.clientName || booking.user?.fullName || "Valued Customer"}</strong>, we confirm that your booking for <strong>${bookingTitle}</strong> has been cancelled and a full refund has been initiated to your original payment method.</p>
+          </div>
+
+          <!-- Grid Info (Outlook-friendly table) -->
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 25px;">
+            <tr>
+              <td width="48%" valign="top" style="background-color: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #edf2f7;">
+                <h4 style="margin: 0 0 8px 0; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Booking Details</h4>
+                <p style="margin: 0 0 4px 0; font-size: 13px;"><strong>Date:</strong> ${formatDate(booking.travelDate)}</p>
+                <p style="margin: 0 0 4px 0; font-size: 13px;"><strong>Time:</strong> ${booking.timeSlot ? formatTimeSlot(booking.timeSlot) : "N/A"}</p>
+                <p style="margin: 0 0 4px 0; font-size: 13px;"><strong>Passengers:</strong> ${booking.passengers} Pax</p>
+                <p style="margin: 0; font-size: 13px;"><strong>Service:</strong> ${booking.serviceType}</p>
+              </td>
+              <td width="4%">&nbsp;</td>
+              <td width="48%" valign="top" style="background-color: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #edf2f7;">
+                <h4 style="margin: 0 0 8px 0; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Booking Invoice</h4>
+                <p style="margin: 0 0 4px 0; font-size: 13px;"><strong>Booking ID:</strong> <span style="font-family: monospace; font-weight: bold; color: #0f294a;">${generateCustomBookingId(booking)}</span></p>
+                <p style="margin: 0 0 4px 0; font-size: 13px;"><strong>Booking Date:</strong> ${formatDate(new Date())}</p>
+                <p style="margin: 0 0 4px 0; font-size: 13px;"><strong>Status:</strong> <span style="color: #dc2626; font-weight: 600;">Cancelled</span></p>
+                <p style="margin: 0; font-size: 13px;"><strong>Refund Status:</strong> <span style="color: #059669; font-weight: 600;">Initiated</span></p>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Footer/Brand Support -->
+          <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center; font-size: 12px; color: #94a3b8;">
+            <p style="margin: 0 0 5px 0;">Refunds typically take 5-10 business days to appear on your bank statement. If you have questions, please reach out to support.</p>
+            <p style="margin: 0; font-weight: 600; color: #0f294a;">Wasik Support | info@wasiktransfers.com</p>
+          </div>
+        </div>
+
+      </div>
     </div>
   `;
 };

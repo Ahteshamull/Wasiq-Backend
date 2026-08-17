@@ -13,7 +13,10 @@ import {
 import config from "../../../config";
 import Stripe from "stripe";
 import emailSender from "../../../helpars/emailSender";
-import { generateBookingConfirmedEmailTemplate } from "../../../shared/utils/emailTemplates";
+import {
+  generateBookingConfirmedEmailTemplate,
+  generateBookingCancelledEmailTemplate,
+} from "../../../shared/utils/emailTemplates";
 
 // stripe account onboarding
 const stripeAccountOnboarding = async (userId: string) => {
@@ -448,9 +451,115 @@ const getMyTransactions = async (userId: string) => {
   return transactions;
 };
 
+// Booking cancellation and Stripe refund
+const cancelStripeBooking = async (
+  bookingId: string,
+  userId: string | undefined,
+  userRole: string | undefined
+) => {
+  const booking = await prisma.tripServiceBooking.findUnique({
+    where: { id: bookingId },
+    include: {
+      user: {
+        select: { id: true, email: true, fullName: true, createdById: true },
+      },
+    },
+  });
+
+  if (!booking) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Booking not found");
+  }
+
+  // Check cancellation permissions (Admins, owners or agents of the booking)
+  if (userRole !== UserRole.ADMIN && userRole !== UserRole.SUPER_ADMIN) {
+    const isBookingOwner = booking.userId === userId;
+    const isAgentOwner = booking.user?.createdById === userId;
+    if (!isBookingOwner && !isAgentOwner) {
+      throw new ApiError(httpStatus.FORBIDDEN, "Unauthorized to cancel this booking");
+    }
+  }
+
+  if (booking.status === BookingStatus.CANCELLED) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Booking is already cancelled");
+  }
+  if (booking.status === BookingStatus.COMPLETED) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Cannot cancel a completed booking");
+  }
+
+  // Check if booking was created more than 3 hours ago
+  const threeHoursInMs = 3 * 60 * 60 * 1000;
+  const timeDiff = Date.now() - new Date(booking.createdAt).getTime();
+  if (timeDiff > threeHoursInMs) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Booking cancellation is only allowed within 3 hours of booking creation."
+    );
+  }
+
+  const payment = await prisma.payment.findFirst({
+    where: {
+      tripServiceBookingId: bookingId,
+      status: PaymentStatus.PAID,
+    },
+  });
+
+  let stripeRefund = null;
+
+  if (payment && payment.paymentIntentId) {
+    try {
+      stripeRefund = await stripe.refunds.create({
+        payment_intent: payment.paymentIntentId,
+      });
+
+      await prisma.payment.update({
+        where: { id: payment.id },
+        data: { status: PaymentStatus.REFUNDED },
+      });
+    } catch (stripeError: any) {
+      console.error("Stripe refund failed:", stripeError);
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        `Stripe Refund Failed: ${stripeError.message || "Unknown error"}`
+      );
+    }
+  }
+
+  const result = await prisma.$transaction(async (tx) => {
+    const updatedBooking = await tx.tripServiceBooking.update({
+      where: { id: bookingId },
+      data: { status: BookingStatus.CANCELLED },
+    });
+
+    if (booking.tripServiceId) {
+      await tx.tripService.update({
+        where: { id: booking.tripServiceId },
+        data: { isService: EveryServiceStatus.AVAILABLE },
+      });
+    }
+
+    return updatedBooking;
+  });
+
+  try {
+    const recipientEmail = booking.user?.email;
+    if (recipientEmail) {
+      const emailHtml = generateBookingCancelledEmailTemplate(booking);
+      await emailSender("Booking Cancelled and Refunded", recipientEmail, emailHtml);
+    }
+  } catch (emailError) {
+    console.error("Failed to send booking cancellation email:", emailError);
+  }
+
+  return {
+    booking: result,
+    refund: stripeRefund ? { id: stripeRefund.id, status: stripeRefund.status } : null,
+  };
+};
+
 export const PaymentService = {
   stripeAccountOnboarding,
   createStripeCheckoutSession,
   stripeHandleWebhook,
   getMyTransactions,
+  cancelStripeBooking,
 };
