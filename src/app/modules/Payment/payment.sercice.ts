@@ -8,6 +8,7 @@ import {
   PaymentStatus,
   UserStatus,
   UserRole,
+  User,
 } from "@prisma/client";
 import config from "../../../config";
 import Stripe from "stripe";
@@ -166,6 +167,7 @@ const createStripeCheckoutSession = async (
       role: true,
       stripeAccountId: true,
       isStripeConnected: true,
+      createdById: true,
     },
   });
   if (!user) {
@@ -177,8 +179,20 @@ const createStripeCheckoutSession = async (
     throw new ApiError(httpStatus.BAD_REQUEST, "Booking already paid");
   }
 
+  // Find the agent associated with this booking if it was placed by an agent
+  let agentUser: Partial<User> | null = null;
+  if (booking.user_role === UserRole.AGENT) {
+    if (user.role === UserRole.AGENT) {
+      agentUser = user;
+    } else if (user.createdById) {
+      agentUser = await prisma.user.findUnique({
+        where: { id: user.createdById },
+      });
+    }
+  }
+
   // check agent onboarding for AGENT role
-  if (user.role === UserRole.AGENT && !user.isStripeConnected) {
+  if (agentUser && !agentUser.isStripeConnected) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
       "Agent must complete Stripe onboarding first",
@@ -189,7 +203,7 @@ const createStripeCheckoutSession = async (
   let adminCommission = 0;
   let agentCommission = 0;
 
-  if (user.role === UserRole.AGENT) {
+  if (booking.user_role === UserRole.AGENT) {
     // agent: 85% admin, 15% agent
     adminCommission = booking.totalPrice * 0.85;
     agentCommission = booking.totalPrice * 0.15;
@@ -284,7 +298,7 @@ const stripeHandleWebhook = async (event: Stripe.Event) => {
       // get user info for agent transfer
       const user = await prisma.user.findUnique({
         where: { id: payment.userId },
-        select: { role: true, stripeAccountId: true },
+        select: { id: true, role: true, stripeAccountId: true, createdById: true },
       });
 
       // build transaction operations
@@ -354,10 +368,22 @@ const stripeHandleWebhook = async (event: Stripe.Event) => {
         console.error("Error sending booking confirmation email:", emailError);
       }
 
-      // handle agent transfer if user is AGENT and has stripe account
+      let agentUser: { stripeAccountId: string | null } | null = null;
+      if (payment.user_role === UserRole.AGENT) {
+        if (user?.role === UserRole.AGENT) {
+          agentUser = user;
+        } else if (user?.createdById) {
+          agentUser = await prisma.user.findUnique({
+            where: { id: user.createdById },
+            select: { stripeAccountId: true },
+          });
+        }
+      }
+
+      // handle agent transfer if agent user has stripe account
       if (
-        user?.role === UserRole.AGENT &&
-        user.stripeAccountId &&
+        payment.user_role === UserRole.AGENT &&
+        agentUser?.stripeAccountId &&
         payment.agent_commission &&
         payment.agent_commission > 0
       ) {
@@ -365,7 +391,7 @@ const stripeHandleWebhook = async (event: Stripe.Event) => {
           await stripe.transfers.create({
             amount: Math.round(payment.agent_commission * 100), // convert to cents
             currency: "EUR",
-            destination: user.stripeAccountId,
+            destination: agentUser.stripeAccountId,
             metadata: {
               paymentId: payment.id,
               type: "agent_commission",
