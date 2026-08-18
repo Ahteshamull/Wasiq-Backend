@@ -36,7 +36,10 @@ const stripeAccountOnboarding = async (userId: string) => {
       const requirements = account.requirements?.currently_due || [];
 
       // if verified
-      if (account.details_submitted || (cardPayments === "active" && transfers === "active")) {
+      if (
+        (account.details_submitted && requirements.length === 0) ||
+        (cardPayments === "active" && transfers === "active")
+      ) {
         // update DB to mark as connected
         await prisma.user.update({
           where: { id: user.id },
@@ -63,7 +66,7 @@ const stripeAccountOnboarding = async (userId: string) => {
         where: { id: user.id },
         data: {
           stripeAccountId: user.stripeAccountId,
-          isStripeConnected: true,
+          isStripeConnected: false,
         },
       });
 
@@ -129,7 +132,7 @@ const stripeAccountOnboarding = async (userId: string) => {
     where: { id: user.id },
     data: {
       stripeAccountId: account.id,
-      isStripeConnected: true,
+      isStripeConnected: false,
     },
   });
 

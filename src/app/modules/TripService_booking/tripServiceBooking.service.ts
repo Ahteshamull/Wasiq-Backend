@@ -99,6 +99,13 @@ const createTripServiceBooking = async (
     );
   }
 
+  if (findUser && findUser.role === UserRole.AGENT && !findUser.isStripeConnected) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "You must complete your Stripe onboarding first to receive commission before making a booking."
+    );
+  }
+
   let accessToken: string | undefined;
   if (isGuestUser) {
     accessToken = jwtHelpers.generateToken(
