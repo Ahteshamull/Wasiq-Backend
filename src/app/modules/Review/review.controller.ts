@@ -4,6 +4,7 @@ import { ReviewService } from "./review.service";
 import sendResponse from "../../../shared/sendResponse";
 import httpStatus from "http-status";
 import { ReviewStatus } from "@prisma/client";
+import { uploadFile } from "../../../helpars/fileUploader";
 
 // create trip service review
 const createTripServiceReview = catchAsync(
@@ -11,11 +12,30 @@ const createTripServiceReview = catchAsync(
     const userId = req.user?.id;
     const { tripServiceId, rating, comment } = req.body;
 
+    const files = req.files as {
+      [fieldname: string]: Express.Multer.File[];
+    };
+
+    // handle image uploads
+    let imageUrls: string[] = [];
+    if (files?.image && files.image.length > 0) {
+      const uploadPromises = files.image.map((file) =>
+        uploadFile.uploadToCloudinary(file),
+      );
+      const uploadResults = await Promise.all(uploadPromises);
+      imageUrls = uploadResults
+        .filter(
+          (result): result is NonNullable<typeof result> => result !== undefined,
+        )
+        .map((result) => result.secure_url);
+    }
+
     const result = await ReviewService.createTripServiceReview(
       userId,
       tripServiceId,
-      rating,
+      Number(rating),
       comment,
+      imageUrls,
     );
     sendResponse(res, {
       statusCode: httpStatus.CREATED,
