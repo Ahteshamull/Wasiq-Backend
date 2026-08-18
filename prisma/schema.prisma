@@ -362,6 +362,7 @@ model Review {
   rating     Float
   subRatings Json?
   comment    String?
+  images     String[] @default([])
   status     ReviewStatus @default(INACTIVE)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt

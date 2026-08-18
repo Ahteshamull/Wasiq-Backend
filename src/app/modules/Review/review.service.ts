@@ -9,6 +9,7 @@ const createTripServiceReview = async (
   tripServiceId: string,
   rating: number,
   comment?: string,
+  images?: string[],
 ) => {
   // check if user exists
   const user = await prisma.user.findUnique({
@@ -36,26 +37,24 @@ const createTripServiceReview = async (
     where: {
       tripServiceId,
       status: BookingStatus.COMPLETED,
-      OR: [
-        { userId },
-        { user: { createdById: userId } }
-      ]
-    }
+      OR: [{ userId }, { user: { createdById: userId } }],
+    },
   });
 
   if (!completedBooking) {
     throw new ApiError(
       httpStatus.FORBIDDEN,
-      "You can only review services for which you have completed bookings."
+      "You can only review services for which you have completed bookings.",
     );
   }
 
   const review = await prisma.review.create({
     data: {
       userId: user.id,
-      tripServiceId: service?.id,
+      tripServiceId: service.id,
       rating,
       comment,
+      images,
     },
     select: {
       id: true,
@@ -63,6 +62,7 @@ const createTripServiceReview = async (
       tripServiceId: true,
       rating: true,
       comment: true,
+      images: true,
       status: true,
       createdAt: true,
       updatedAt: true,
@@ -71,7 +71,7 @@ const createTripServiceReview = async (
 
   const ratings = await prisma.review.findMany({
     where: {
-      tripServiceId: service?.id,
+      tripServiceId: service.id,
     },
     select: {
       rating: true,
@@ -83,7 +83,7 @@ const createTripServiceReview = async (
     ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length;
 
   await prisma.tripService.update({
-    where: { id: service?.id },
+    where: { id: service.id },
     data: {
       ratings: parseFloat(averageRating.toFixed(1)),
       reviewCount: ratings.length,
@@ -111,6 +111,7 @@ const getAllReviews = async () => {
       tripServiceId: true,
       rating: true,
       comment: true,
+      images: true,
       status: true,
       createdAt: true,
       updatedAt: true,
@@ -141,6 +142,7 @@ const updateReviewStatus = async (reviewId: string, status: ReviewStatus) => {
       tripServiceId: true,
       rating: true,
       comment: true,
+      images: true,
       status: true,
       createdAt: true,
       updatedAt: true,

@@ -2,6 +2,8 @@ import express from "express";
 import { ReviewController } from "./review.controller";
 import auth from "../../middlewares/auth";
 import { UserRole } from "@prisma/client";
+import { uploadFile } from "../../../helpars/fileUploader";
+import { parseBodyData } from "../../middlewares/parseNestedJson";
 
 const router = express.Router();
 
@@ -9,6 +11,8 @@ const router = express.Router();
 router.post(
   "/service",
   auth(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.USER, UserRole.AGENT),
+  uploadFile.upload.fields([{ name: "image", maxCount: 10 }]),
+  parseBodyData,
   ReviewController.createTripServiceReview,
 );
 
