@@ -20,12 +20,9 @@ const createTripServiceReview = async (
     throw new ApiError(httpStatus.NOT_FOUND, "User not found");
   }
 
-  // check if booking exists, belongs to user/agent, and is COMPLETED
+  // check if booking exists
   const booking = await prisma.tripServiceBooking.findUnique({
     where: { id: bookingId },
-    include: {
-      user: true,
-    },
   });
   if (!booking) {
     throw new ApiError(httpStatus.NOT_FOUND, "Booking not found");
@@ -35,16 +32,6 @@ const createTripServiceReview = async (
     userRole === UserRole.ADMIN || userRole === UserRole.SUPER_ADMIN;
 
   if (!isBypassRole) {
-    const isAuthorized =
-      booking.userId === userId ||
-      (booking.user && booking.user.createdById === userId);
-    if (!isAuthorized) {
-      throw new ApiError(
-        httpStatus.FORBIDDEN,
-        "You are not authorized to review this booking",
-      );
-    }
-
     if (booking.status !== BookingStatus.COMPLETED) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
@@ -53,67 +40,33 @@ const createTripServiceReview = async (
     }
   }
 
-  if (!booking.tripServiceId) {
-    throw new ApiError(
-      httpStatus.BAD_REQUEST,
-      "This booking is not associated with any trip service.",
-    );
-  }
-
-  const tripServiceId = booking.tripServiceId;
-
-  // check if service exists
-  const service = await prisma.tripService.findUnique({
-    where: { id: tripServiceId },
-    select: {
-      id: true,
-      ratings: true,
-      reviewCount: true,
-    },
+  // check if review already exists for this booking
+  const existingReview = await prisma.review.findFirst({
+    where: { bookingId },
   });
-  if (!service) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Trip service not found");
+  if (existingReview) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "You have already reviewed this booking");
   }
 
   const review = await prisma.review.create({
     data: {
       userId: user.id,
-      tripServiceId: service.id,
+      bookingId: booking.id,
       rating,
       comment,
       images,
+      status: ReviewStatus.ACTIVE,
     },
     select: {
       id: true,
       userId: true,
-      tripServiceId: true,
+      bookingId: true,
       rating: true,
       comment: true,
       images: true,
       status: true,
       createdAt: true,
       updatedAt: true,
-    },
-  });
-
-  const ratings = await prisma.review.findMany({
-    where: {
-      tripServiceId: service.id,
-    },
-    select: {
-      rating: true,
-    },
-  });
-
-  // average rating calculation
-  const averageRating =
-    ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length;
-
-  await prisma.tripService.update({
-    where: { id: service.id },
-    data: {
-      ratings: parseFloat(averageRating.toFixed(1)),
-      reviewCount: ratings.length,
     },
   });
 
@@ -135,7 +88,7 @@ const getAllReviews = async () => {
           contactNumber: true,
         },
       },
-      tripServiceId: true,
+      bookingId: true,
       rating: true,
       comment: true,
       images: true,
@@ -166,7 +119,7 @@ const updateReviewStatus = async (reviewId: string, status: ReviewStatus) => {
     select: {
       id: true,
       userId: true,
-      tripServiceId: true,
+      bookingId: true,
       rating: true,
       comment: true,
       images: true,

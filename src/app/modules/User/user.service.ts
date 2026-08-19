@@ -956,7 +956,11 @@ const deleteUser = async (
           where: { tripServiceId: { in: tripServiceIds } },
         });
         await tx.review.deleteMany({
-          where: { tripServiceId: { in: tripServiceIds } },
+          where: {
+            booking: {
+              tripServiceId: { in: tripServiceIds },
+            },
+          },
         });
         await tx.tripService.deleteMany({
           where: { id: { in: tripServiceIds } },

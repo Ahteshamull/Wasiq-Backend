@@ -373,6 +373,7 @@ const getAgentBookings = async (
   userId: string,
   timeRange?: string,
   status?: string,
+  tripServiceId?: string,
 ) => {
   // find agent
   const agent = await prisma.user.findFirst({
@@ -397,43 +398,38 @@ const getAgentBookings = async (
   // date range filter
   const dateRange = getDateRange(timeRange);
 
+  const baseWhere: any = {
+    OR: [
+      { tripService: { userId } },
+      { user: { createdById: userId } },
+      { userId },
+    ],
+    ...(dateRange && { createdAt: dateRange }),
+    ...(tripServiceId && { tripServiceId }),
+  };
+
   // total bookings
   const totalBookings = await prisma.tripServiceBooking.count({
     where: {
-      OR: [
-        { tripService: { userId } },
-        { user: { createdById: userId } },
-        { userId },
-      ],
+      ...baseWhere,
       status: {
         in: [BookingStatus.CONFIRMED, BookingStatus.COMPLETED],
       },
-      ...(dateRange && { createdAt: dateRange }),
     },
   });
 
   // total confirmed booking
   const totalConfirmedBookings = await prisma.tripServiceBooking.count({
     where: {
-      OR: [
-        { tripService: { userId } },
-        { user: { createdById: userId } },
-        { userId },
-      ],
+      ...baseWhere,
       status: BookingStatus.CONFIRMED,
-      ...(dateRange && { createdAt: dateRange }),
     },
   });
   // total completed booking
   const totalCompletedBookings = await prisma.tripServiceBooking.count({
     where: {
-      OR: [
-        { tripService: { userId } },
-        { user: { createdById: userId } },
-        { userId },
-      ],
+      ...baseWhere,
       status: BookingStatus.COMPLETED,
-      ...(dateRange && { createdAt: dateRange }),
     },
   });
 
@@ -447,6 +443,7 @@ const getAgentBookings = async (
           { user: { createdById: userId } },
           { userId },
         ],
+        ...(tripServiceId && { tripServiceId }),
       },
       ...(dateRange && { createdAt: dateRange }),
     },
@@ -467,6 +464,7 @@ const getAgentBookings = async (
         { userId },
       ],
       ...(status ? { status: status as BookingStatus } : {}),
+      ...(tripServiceId && { tripServiceId }),
     },
     select: {
       id: true,
@@ -510,14 +508,15 @@ const getAgentBookings = async (
     timeRange: timeRange || "ALL_TIME",
   };
 };
-// get agent bookings
+// get user bookings
 const getUserBookings = async (
   userId: string,
   timeRange?: string,
   status?: string,
   options?: IPaginationOptions,
+  tripServiceId?: string,
 ) => {
-  // find agent
+  // find user
   const user = await prisma.user.findFirst({
     where: {
       id: userId,
@@ -553,6 +552,7 @@ const getUserBookings = async (
         in: [BookingStatus.CONFIRMED, BookingStatus.COMPLETED],
       },
       ...(dateRange && { createdAt: dateRange }),
+      ...(tripServiceId && { tripServiceId }),
     },
   });
 
@@ -562,6 +562,7 @@ const getUserBookings = async (
       userId,
       status: BookingStatus.CONFIRMED,
       ...(dateRange && { createdAt: dateRange }),
+      ...(tripServiceId && { tripServiceId }),
     },
   });
   // total completed booking
@@ -570,6 +571,7 @@ const getUserBookings = async (
       userId,
       status: BookingStatus.COMPLETED,
       ...(dateRange && { createdAt: dateRange }),
+      ...(tripServiceId && { tripServiceId }),
     },
   });
 
@@ -579,6 +581,7 @@ const getUserBookings = async (
       status: PaymentStatus.PAID,
       userId,
       ...(dateRange && { createdAt: dateRange }),
+      ...(tripServiceId && { tripServiceBooking: { tripServiceId } }),
     },
     _sum: {
       agent_commission: true,
@@ -592,6 +595,7 @@ const getUserBookings = async (
   const bookingsWhere = {
     userId,
     ...(status ? { status: status as BookingStatus } : {}),
+    ...(tripServiceId && { tripServiceId }),
   };
 
   // total count for pagination
@@ -914,9 +918,9 @@ const getAdminTotalEarnings = async (options: IPaginationOptions) => {
 };
 
 // admin booking
-const getAdminTotalBookings = async (options: IPaginationOptions & { status?: string }) => {
+const getAdminTotalBookings = async (options: IPaginationOptions & { status?: string; tripServiceId?: string }) => {
   const { page, limit, skip } = paginationHelpers.calculatedPagination(options);
-  const { status } = options;
+  const { status, tripServiceId } = options;
 
   if (status) {
     const validStatuses = Object.values(BookingStatus);
@@ -925,9 +929,10 @@ const getAdminTotalBookings = async (options: IPaginationOptions & { status?: st
     }
   }
 
-  const where = status
-    ? { status: status as BookingStatus }
-    : {}; // default: show all statuses
+  const where: any = {
+    ...(status ? { status: status as BookingStatus } : {}),
+    ...(tripServiceId && { tripServiceId }),
+  };
 
   // total payments
   const totalBookings = await prisma.tripServiceBooking.count({
@@ -940,6 +945,7 @@ const getAdminTotalBookings = async (options: IPaginationOptions & { status?: st
       status: {
         in: [BookingStatus.COMPLETED],
       },
+      ...(tripServiceId && { tripServiceId }),
     },
   });
 

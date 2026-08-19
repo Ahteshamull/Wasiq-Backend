@@ -44,12 +44,13 @@ const getAgentTotalEarningsAndBookings = catchAsync(
 // get agent bookings
 const getAgentBookings = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id;
-  const { timeRange, status } = req.query;
+  const { timeRange, status, tripServiceId } = req.query;
 
   const result = await StatisticsService.getAgentBookings(
     userId,
     timeRange as string,
     status as string,
+    tripServiceId as string,
   );
 
   sendResponse(res, {
@@ -62,7 +63,7 @@ const getAgentBookings = catchAsync(async (req: Request, res: Response) => {
 // get user bookings
 const getUserBookings = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id;
-  const { timeRange, status } = req.query;
+  const { timeRange, status, tripServiceId } = req.query;
   const options = pick(req.query, paginationFields);
 
   const result = await StatisticsService.getUserBookings(
@@ -70,6 +71,7 @@ const getUserBookings = catchAsync(async (req: Request, res: Response) => {
     timeRange as string,
     status as string,
     options,
+    tripServiceId as string,
   );
 
   sendResponse(res, {
@@ -119,7 +121,7 @@ const getAdminTotalEarnings = catchAsync(
 // admin booking
 const getAdminTotalBookings = catchAsync(
   async (req: Request, res: Response) => {
-    const options = pick(req.query, [...paginationFields, "status"]);
+    const options = pick(req.query, [...paginationFields, "status", "tripServiceId"]);
 
     const result = await StatisticsService.getAdminTotalBookings(options);
 
