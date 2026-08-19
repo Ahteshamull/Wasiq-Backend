@@ -24,7 +24,7 @@ const createOrUpdateRefundPolicy = async (description: string) => {
 
 // get all Refund policy
 const getAllRefundPolicy = async () => {
-  const result = await prisma.refund_Policy.findMany();
+  const result = await prisma.refund_Policy.findFirst();
   return result;
 };
 

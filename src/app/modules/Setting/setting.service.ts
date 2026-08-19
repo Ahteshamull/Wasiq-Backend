@@ -24,7 +24,7 @@ const createOrUpdateAbout = async (description: string) => {
 };
 
 const getAbout = async () => {
-  const result = await prisma.about_App.findMany();
+  const result = await prisma.about_App.findFirst();
 
   if (!result) {
     throw new Error("About App not found");
