@@ -189,16 +189,14 @@ for (const target of targetPopular) {
     // Remove from source array to avoid duplicate matching
     popularStoppages.splice(matchIndex, 1);
   } else {
-    console.log(`Could not find match for target: "${target.name}"`);
+    //
   }
 }
 
-// For remaining items (like Kildare City), let's keep them and append them at the end.
-console.log(`Matched and aligned: ${alignedList.length} items.`);
-console.log(`Extra items appended at the end: ${popularStoppages.length} items.`);
+
 
 const finalResult = [...alignedList, ...popularStoppages];
 
 // Write formatted JSON back to file
 fs.writeFileSync(sourcePath, JSON.stringify(finalResult, null, 2), 'utf8');
-console.log(`Successfully updated and aligned popularStoppagesWithCoords.json!`);
+
