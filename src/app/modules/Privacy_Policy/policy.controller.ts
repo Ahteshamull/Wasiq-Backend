@@ -9,6 +9,8 @@ const createOrUpdatePolicy = catchAsync(async (req: Request, res: Response) => {
   const adminId = req.user?.id;
   const { description } = req.body;
 
+ 
+
   const result = await PrivacyServices.createOrUpdatePolicy(adminId, description);
   sendResponse(res, {
     statusCode: httpStatus.OK,

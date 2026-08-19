@@ -8,6 +8,7 @@ const createOrUpdatePolicy = async (
   adminId: string,
   description: string
 ): Promise<IPrivacyPolicy | void> => {
+  console.log("Service received description:", description);
   // find admin
   const admin = await prisma.user.findUnique({
     where: {
@@ -40,7 +41,7 @@ const createOrUpdatePolicy = async (
 
 // get all privacy policy
 const getAllPolicy = async () => {
-  const policy = await prisma.privacy_Policy.findMany();
+  const policy = await prisma.privacy_Policy.findFirst();
   if (!policy)
     throw new ApiError(httpStatus.NOT_FOUND, "Privacy Policy not found");
   return policy;
