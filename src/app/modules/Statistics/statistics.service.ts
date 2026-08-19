@@ -469,6 +469,7 @@ const getAgentBookings = async (
       ...(status ? { status: status as BookingStatus } : {}),
     },
     select: {
+      id: true,
       clientName: true,
       from: true,
       to: true,
