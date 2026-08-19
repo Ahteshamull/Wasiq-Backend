@@ -6,6 +6,7 @@ import { paginationHelpers } from "../../../helpars/paginationHelper";
 import { IGenericResponse } from "../../../interfaces/common";
 import ApiError from "../../../errors/ApiErrors";
 import httpStatus from "http-status";
+import { memoryCache } from "../../../shared/utils/cache";
 
 // create vehicle
 const createVehicle = async (payload: IVehicle): Promise<Vehicle> => {
@@ -31,6 +32,7 @@ const createVehicle = async (payload: IVehicle): Promise<Vehicle> => {
     data: payload as Prisma.VehicleCreateInput,
   });
 
+  memoryCache.clearPattern("vehicles:");
   return result;
 };
 
@@ -39,6 +41,10 @@ const getAllVehicles = async (
   filters: IVehicleFilters,
   options: IPaginationOptions,
 ): Promise<IGenericResponse<Vehicle[]>> => {
+  const cacheKey = `vehicles:${JSON.stringify(filters)}:${JSON.stringify(options)}`;
+  const cached = memoryCache.get<IGenericResponse<Vehicle[]>>(cacheKey);
+  if (cached) return cached;
+
   const { page, limit, skip } = paginationHelpers.calculatedPagination(options);
 
   const {
@@ -101,7 +107,7 @@ const getAllVehicles = async (
     where: whereCondition,
   });
 
-  return {
+  const responseData = {
     meta: {
       total,
       page,
@@ -109,6 +115,9 @@ const getAllVehicles = async (
     },
     data: result,
   };
+
+  memoryCache.set(cacheKey, responseData, 300000); // 5 mins cache
+  return responseData;
 };
 
 // get single vehicle
@@ -143,6 +152,7 @@ const updateVehicle = async (
     data: payload,
   });
 
+  memoryCache.clearPattern("vehicles:");
   return result;
 };
 
@@ -184,6 +194,7 @@ const deleteVehicle = async (id: string): Promise<Vehicle> => {
     },
   });
 
+  memoryCache.clearPattern("vehicles:");
   return result;
 };
 

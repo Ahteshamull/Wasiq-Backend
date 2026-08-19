@@ -1,5 +1,6 @@
-import { Prisma, CustomerContact } from "@prisma/client";
+import { Prisma, CustomerContact, UserRole } from "@prisma/client";
 import prisma from "../../../shared/prisma";
+import config from "../../../config";
 import {
   ICustomerContact,
   ICustomerContactFilters,
@@ -10,6 +11,10 @@ import { IGenericResponse } from "../../../interfaces/common";
 import ApiError from "../../../errors/ApiErrors";
 import httpStatus from "http-status";
 import emailSender from "../../../helpars/emailSender";
+import {
+  generateCustomerContactUserEmailTemplate,
+  generateCustomerContactAdminEmailTemplate,
+} from "../../../shared/utils/emailTemplates";
 
 // create customer contact
 const createCustomerContact = async (
@@ -19,48 +24,48 @@ const createCustomerContact = async (
     data: payload,
   });
 
-  // send confirmation email to customer
-  const emailSubject =
-    "Thank you for contacting us - We've received your message";
-  const emailHtml = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <h2 style="color: #333; text-align: center;">Thank You for Contacting Us!</h2>
-      <p style="color: #666; line-height: 1.6;">
-        Dear ${payload.fullName},
-      </p>
-      <p style="color: #666; line-height: 1.6;">
-        We have successfully received your message regarding "<strong>${payload.subject}</strong>". 
-        Our team will review your inquiry and get back to you as soon as possible.
-      </p>
-      <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-        <h3 style="color: #333; margin-top: 0;">Your Contact Details:</h3>
-        <p style="color: #666; margin: 5px 0;"><strong>Name:</strong> ${payload.fullName}</p>
-        <p style="color: #666; margin: 5px 0;"><strong>Email:</strong> ${payload.email}</p>
-        <p style="color: #666; margin: 5px 0;"><strong>Phone:</strong> ${payload.contactNumber}</p>
-        <p style="color: #666; margin: 5px 0;"><strong>Subject:</strong> ${payload.subject}</p>
-        ${payload.description ? `<p style="color: #666; margin: 5px 0;"><strong>Message:</strong> ${payload.description}</p>` : ""}
-      </div>
-      <p style="color: #666; line-height: 1.6;">
-        We typically respond within 24-48 hours during business days. If your matter is urgent, 
-        please don't hesitate to call us directly.
-      </p>
-      <p style="color: #666; line-height: 1.6;">
-        Best regards,<br>
-        The Customer Support Team
-      </p>
-      <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-        <p style="color: #999; font-size: 12px;">
-          This is an automated message. Please do not reply to this email.
-        </p>
-      </div>
-    </div>
-  `;
-
+  // 1. send confirmation email to customer
   try {
-    await emailSender(emailSubject, payload.email, emailHtml);
+    const userEmailSubject = "Thank you for contacting us - We've received your message";
+    const userEmailHtml = generateCustomerContactUserEmailTemplate(payload);
+    await emailSender(userEmailSubject, payload.email, userEmailHtml);
   } catch (error) {
-    console.error("Failed to send confirmation email:", error);
-    // don't throw error here, as the contact was created successfully
+    console.error("Failed to send customer confirmation email:", error);
+  }
+
+  // 2. send notification email to admin(s)
+  try {
+    const adminEmailSubject = `New Customer Inquiry: ${payload.subject}`;
+    const adminEmailHtml = generateCustomerContactAdminEmailTemplate(payload);
+
+    if (config.contactMailAddress) {
+      // Send to the specified contact email address in configuration
+      await emailSender(adminEmailSubject, config.contactMailAddress, adminEmailHtml);
+    } else {
+      // Fallback: Query all users with ADMIN or SUPER_ADMIN role
+      const admins = await prisma.user.findMany({
+        where: {
+          role: {
+            in: [UserRole.ADMIN, UserRole.SUPER_ADMIN],
+          },
+        },
+        select: {
+          email: true,
+        },
+      });
+
+      for (const admin of admins) {
+        if (admin.email) {
+          try {
+            await emailSender(adminEmailSubject, admin.email, adminEmailHtml);
+          } catch (adminEmailError) {
+            console.error(`Failed to send contact notification email to admin: ${admin.email}`, adminEmailError);
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Failed to send admin notification email:", error);
   }
 
   return result;

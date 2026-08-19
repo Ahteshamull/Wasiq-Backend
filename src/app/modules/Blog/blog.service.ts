@@ -6,6 +6,7 @@ import { paginationHelpers } from "../../../helpars/paginationHelper";
 import { IGenericResponse } from "../../../interfaces/common";
 import ApiError from "../../../errors/ApiErrors";
 import httpStatus from "http-status";
+import { memoryCache } from "../../../shared/utils/cache";
 
 // create blog
 const createBlog = async (payload: IBlog): Promise<Blog> => {
@@ -13,6 +14,7 @@ const createBlog = async (payload: IBlog): Promise<Blog> => {
     data: payload,
   });
 
+  memoryCache.clearPattern("blogs:");
   return result;
 };
 
@@ -21,6 +23,10 @@ const getAllBlogs = async (
   filters: IBlogFilters,
   options: IPaginationOptions,
 ): Promise<IGenericResponse<Blog[]>> => {
+  const cacheKey = `blogs:${JSON.stringify(filters)}:${JSON.stringify(options)}`;
+  const cached = memoryCache.get<IGenericResponse<Blog[]>>(cacheKey);
+  if (cached) return cached;
+
   const { page, limit, skip } = paginationHelpers.calculatedPagination(options);
 
   const { search, category, minDate, maxDate } = filters;
@@ -89,7 +95,7 @@ const getAllBlogs = async (
     where: whereCondition,
   });
 
-  return {
+  const responseData = {
     meta: {
       total,
       page,
@@ -97,6 +103,9 @@ const getAllBlogs = async (
     },
     data: result,
   };
+
+  memoryCache.set(cacheKey, responseData, 300000); // 5 mins cache
+  return responseData;
 };
 
 // get single blog
@@ -135,6 +144,7 @@ const updateBlog = async (
     data: payload,
   });
 
+  memoryCache.clearPattern("blogs:");
   return result;
 };
 
@@ -155,6 +165,7 @@ const deleteBlog = async (id: string): Promise<Blog> => {
     },
   });
 
+  memoryCache.clearPattern("blogs:");
   return result;
 };
 

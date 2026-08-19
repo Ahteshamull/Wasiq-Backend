@@ -6,6 +6,7 @@ import { ITripService, ITripServiceFilters } from "./tripService.interface";
 import { paginationHelpers } from "../../../helpars/paginationHelper";
 import { IPaginationOptions } from "../../../interfaces/paginations";
 import { IGenericResponse } from "../../../interfaces/common";
+import { memoryCache } from "../../../shared/utils/cache";
 
 const mapTripService = (trip: any) => {
   if (!trip) return null;
@@ -91,6 +92,7 @@ const createTripService = async (
     },
   });
 
+  memoryCache.clearPattern("trip_services:");
   return mapTripService(result) as any;
 };
 
@@ -99,6 +101,10 @@ const getAllTripServices = async (
   filters: ITripServiceFilters,
   options: IPaginationOptions,
 ): Promise<{ data: TripService[]; meta: any }> => {
+  const cacheKey = `trip_services:${JSON.stringify(filters)}:${JSON.stringify(options)}`;
+  const cached = memoryCache.get<{ data: TripService[]; meta: any }>(cacheKey);
+  if (cached) return cached;
+
   const { page, limit, skip } = paginationHelpers.calculatedPagination(options);
   const { search, from, to, minPrice, maxPrice, routeType, isPopular } =
     filters;
@@ -172,7 +178,7 @@ const getAllTripServices = async (
     where: whereConditions,
   });
 
-  return {
+  const responseData = {
     meta: {
       total,
       page,
@@ -180,6 +186,9 @@ const getAllTripServices = async (
     },
     data: mapTripServices(result),
   };
+
+  memoryCache.set(cacheKey, responseData, 300000); // 5 mins cache
+  return responseData;
 };
 
 // ----------------- by the hour -----------------
@@ -327,6 +336,7 @@ const createExploreService = async (
     },
   });
 
+  memoryCache.clearPattern("trip_services:");
   return mapTripService(result);
 };
 
@@ -448,6 +458,7 @@ const createDayTripService = async (
     },
   });
 
+  memoryCache.clearPattern("trip_services:");
   return result;
 };
 
@@ -673,6 +684,7 @@ const createMultiDayTourTripService = async (
     },
   });
 
+  memoryCache.clearPattern("trip_services:");
   return mapTripService(result);
 };
 
@@ -1461,6 +1473,7 @@ const updateTripService = async (
     },
   });
 
+  memoryCache.clearPattern("trip_services:");
   return result;
 };
 
@@ -1492,6 +1505,7 @@ const deleteTripService = async (id: string): Promise<TripService> => {
     },
   });
 
+  memoryCache.clearPattern("trip_services:");
   return mapTripService(result);
 };
 

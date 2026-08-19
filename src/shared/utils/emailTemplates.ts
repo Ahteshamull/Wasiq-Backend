@@ -416,3 +416,74 @@ export const generateBookingCancelledEmailTemplate = (booking: any): string => {
     </div>
   `;
 };
+
+export const generateCustomerContactUserEmailTemplate = (payload: any): string => {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <h2 style="color: #333; text-align: center;">Thank You for Contacting Us!</h2>
+      <p style="color: #666; line-height: 1.6;">
+        Dear \${payload.fullName},
+      </p>
+      <p style="color: #666; line-height: 1.6;">
+        We have successfully received your message regarding "<strong>\${payload.subject}</strong>". 
+        Our team will review your inquiry and get back to you as soon as possible.
+      </p>
+      <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+        <h3 style="color: #333; margin-top: 0;">Your Contact Details:</h3>
+        <p style="color: #666; margin: 5px 0;"><strong>Name:</strong> \${payload.fullName}</p>
+        <p style="color: #666; margin: 5px 0;"><strong>Email:</strong> \${payload.email}</p>
+        <p style="color: #666; margin: 5px 0;"><strong>Phone:</strong> \${payload.contactNumber}</p>
+        <p style="color: #666; margin: 5px 0;"><strong>Subject:</strong> \${payload.subject}</p>
+        \${payload.description ? \`<p style="color: #666; margin: 5px 0;"><strong>Message:</strong> \${payload.description}</p>\` : ""}
+      </div>
+      <p style="color: #666; line-height: 1.6;">
+        We typically respond within 24-48 hours during business days. If your matter is urgent, 
+        please don't hesitate to call us directly.
+      </p>
+      <p style="color: #666; line-height: 1.6;">
+        Best regards,<br>
+        The Customer Support Team
+      </p>
+      <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+        <p style="color: #999; font-size: 12px;">
+          This is an automated message. Please do not reply to this email.
+        </p>
+      </div>
+    </div>
+  `;
+};
+
+export const generateCustomerContactAdminEmailTemplate = (payload: any): string => {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
+      <h2 style="color: #d32f2f; text-align: center; margin-bottom: 20px;">New Contact Message Received</h2>
+      <p style="color: #333; line-height: 1.6;">
+        Hello Admin,
+      </p>
+      <p style="color: #666; line-height: 1.6;">
+        A customer has submitted a contact form on Wasik Transfers. Here are the details of the submission:
+      </p>
+      <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #d32f2f;">
+        <h3 style="color: #333; margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 8px;">Submission Information:</h3>
+        <p style="color: #333; margin: 8px 0;"><strong>Full Name:</strong> \${payload.fullName}</p>
+        <p style="color: #333; margin: 8px 0;"><strong>Email Address:</strong> <a href="mailto:\${payload.email}" style="color: #1a73e8;">\${payload.email}</a></p>
+        <p style="color: #333; margin: 8px 0;"><strong>Contact Number:</strong> \${payload.contactNumber}</p>
+        <p style="color: #333; margin: 8px 0;"><strong>Subject:</strong> \${payload.subject}</p>
+        \${payload.description ? \`
+        <div style="margin-top: 15px;">
+          <strong>Message/Description:</strong>
+          <p style="color: #555; background-color: #fff; padding: 10px; border: 1px solid #e0e0e0; border-radius: 4px; margin-top: 5px; white-space: pre-wrap;">\${payload.description}</p>
+        </div>
+        \` : ""}
+      </div>
+      <p style="color: #666; line-height: 1.6;">
+        Please reply to this inquiry directly at <a href="mailto:\${payload.email}">\${payload.email}</a>.
+      </p>
+      <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+        <p style="color: #999; font-size: 11px; margin: 0;">
+          Wasik Transfers Notification Service
+        </p>
+      </div>
+    </div>
+  `;
+};
