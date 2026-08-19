@@ -35,14 +35,14 @@ router.get(
 
 // get single notification
 router.get(
-  "/:notificationId",
+  "/get-notification/:notificationId",
   auth(),
   NotificationController.getSingleNotificationById,
 );
 
 // delete notification
 router.delete(
-  "/:notificationId",
+  "/delete-notification/:notificationId",
   auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
   NotificationController.deleteNotification,
 );

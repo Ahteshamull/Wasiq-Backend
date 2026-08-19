@@ -214,7 +214,7 @@ const getMyNotifications = async (
 
 const deleteNotification = async (notificationId: string, userId: string) => {
   // find notification
-  const notification = await prisma.notifications.findUnique({
+  const notification = await prisma.notifications.findFirst({
     where: {
       id: notificationId,
       receiverId: userId,
@@ -235,7 +235,7 @@ const deleteNotification = async (notificationId: string, userId: string) => {
 // mark as read notification
 const markAsReadNotification = async (notificationId: string, userId: string) => {
   // find notification
-  const notification = await prisma.notifications.findUnique({
+  const notification = await prisma.notifications.findFirst({
     where: {
       id: notificationId,
       receiverId: userId,
@@ -244,6 +244,10 @@ const markAsReadNotification = async (notificationId: string, userId: string) =>
 
   if (!notification) {
     throw new ApiError(404, "Notification not found");
+  }
+
+  if (notification.read) {
+    return notification;
   }
 
   return prisma.notifications.update({
@@ -258,7 +262,7 @@ const markAsUnreadNotification = async (
   userId: string
 ) => {
   // find notification
-  const notification = await prisma.notifications.findUnique({
+  const notification = await prisma.notifications.findFirst({
     where: {
       id: notificationId,
       receiverId: userId,
@@ -267,6 +271,10 @@ const markAsUnreadNotification = async (
 
   if (!notification) {
     throw new ApiError(404, "Notification not found");
+  }
+
+  if (!notification.read) {
+    return notification;
   }
 
   return prisma.notifications.update({
@@ -278,7 +286,7 @@ const markAsUnreadNotification = async (
 // mark all as read notification
 const markAllAsReadNotification = async (userId: string) => {
   return prisma.notifications.updateMany({
-    where: { receiverId: userId },
+    where: { receiverId: userId, read: false },
     data: { read: true },
   });
 };
