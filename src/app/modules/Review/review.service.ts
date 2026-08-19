@@ -6,7 +6,7 @@ import httpStatus from "http-status";
 // create trip service review
 const createTripServiceReview = async (
   userId: string,
-  tripServiceId: string,
+  bookingId: string,
   rating: number,
   comment?: string,
   images?: string[],
@@ -19,6 +19,43 @@ const createTripServiceReview = async (
     throw new ApiError(httpStatus.NOT_FOUND, "User not found");
   }
 
+  // check if booking exists, belongs to user/agent, and is COMPLETED
+  const booking = await prisma.tripServiceBooking.findUnique({
+    where: { id: bookingId },
+    include: {
+      user: true,
+    },
+  });
+  if (!booking) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Booking not found");
+  }
+
+  const isAuthorized =
+    booking.userId === userId ||
+    (booking.user && booking.user.createdById === userId);
+  if (!isAuthorized) {
+    throw new ApiError(
+      httpStatus.FORBIDDEN,
+      "You are not authorized to review this booking",
+    );
+  }
+
+  if (booking.status !== BookingStatus.COMPLETED) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "You can only review services for which you have completed bookings.",
+    );
+  }
+
+  if (!booking.tripServiceId) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "This booking is not associated with any trip service.",
+    );
+  }
+
+  const tripServiceId = booking.tripServiceId;
+
   // check if service exists
   const service = await prisma.tripService.findUnique({
     where: { id: tripServiceId },
@@ -29,23 +66,7 @@ const createTripServiceReview = async (
     },
   });
   if (!service) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Room not found");
-  }
-
-  // check if user or agent has a completed booking for this service
-  const completedBooking = await prisma.tripServiceBooking.findFirst({
-    where: {
-      tripServiceId,
-      status: BookingStatus.COMPLETED,
-      OR: [{ userId }, { user: { createdById: userId } }],
-    },
-  });
-
-  if (!completedBooking) {
-    throw new ApiError(
-      httpStatus.FORBIDDEN,
-      "You can only review services for which you have completed bookings.",
-    );
+    throw new ApiError(httpStatus.NOT_FOUND, "Trip service not found");
   }
 
   const review = await prisma.review.create({

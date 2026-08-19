@@ -10,7 +10,7 @@ import { uploadFile } from "../../../helpars/fileUploader";
 const createTripServiceReview = catchAsync(
   async (req: Request, res: Response) => {
     const userId = req.user?.id;
-    const { tripServiceId, rating, comment } = req.body;
+    const { bookingId, rating, comment } = req.body;
 
     const files = req.files as {
       [fieldname: string]: Express.Multer.File[];
@@ -32,7 +32,7 @@ const createTripServiceReview = catchAsync(
 
     const result = await ReviewService.createTripServiceReview(
       userId,
-      tripServiceId,
+      bookingId,
       Number(rating),
       comment,
       imageUrls,
