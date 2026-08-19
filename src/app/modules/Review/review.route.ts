@@ -18,7 +18,7 @@ router.post(
 
 //localhost:5000/api/v1/review/service-all-reviews
 
-router.get("/service-all-reviews",  ReviewController.getAllReviews);
+router.get("/service-all-reviews", ReviewController.getAllReviews);
 
 // update review status
 router.patch(
@@ -26,7 +26,5 @@ router.patch(
   auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
   ReviewController.updateReviewStatus,
 );
-
-
 
 export const reviewRoute = router;

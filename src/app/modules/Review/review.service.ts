@@ -1,5 +1,5 @@
 import prisma from "../../../shared/prisma";
-import { ReviewStatus, BookingStatus } from "@prisma/client";
+import { ReviewStatus, BookingStatus, UserRole } from "@prisma/client";
 import ApiError from "../../../errors/ApiErrors";
 import httpStatus from "http-status";
 
@@ -10,6 +10,7 @@ const createTripServiceReview = async (
   rating: number,
   comment?: string,
   images?: string[],
+  userRole?: string,
 ) => {
   // check if user exists
   const user = await prisma.user.findUnique({
@@ -30,21 +31,26 @@ const createTripServiceReview = async (
     throw new ApiError(httpStatus.NOT_FOUND, "Booking not found");
   }
 
-  const isAuthorized =
-    booking.userId === userId ||
-    (booking.user && booking.user.createdById === userId);
-  if (!isAuthorized) {
-    throw new ApiError(
-      httpStatus.FORBIDDEN,
-      "You are not authorized to review this booking",
-    );
-  }
+  const isBypassRole =
+    userRole === UserRole.ADMIN || userRole === UserRole.SUPER_ADMIN;
 
-  if (booking.status !== BookingStatus.COMPLETED) {
-    throw new ApiError(
-      httpStatus.BAD_REQUEST,
-      "You can only review services for which you have completed bookings.",
-    );
+  if (!isBypassRole) {
+    const isAuthorized =
+      booking.userId === userId ||
+      (booking.user && booking.user.createdById === userId);
+    if (!isAuthorized) {
+      throw new ApiError(
+        httpStatus.FORBIDDEN,
+        "You are not authorized to review this booking",
+      );
+    }
+
+    if (booking.status !== BookingStatus.COMPLETED) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        "You can only review services for which you have completed bookings.",
+      );
+    }
   }
 
   if (!booking.tripServiceId) {

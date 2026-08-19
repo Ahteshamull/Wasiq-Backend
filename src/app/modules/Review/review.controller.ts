@@ -10,6 +10,7 @@ import { uploadFile } from "../../../helpars/fileUploader";
 const createTripServiceReview = catchAsync(
   async (req: Request, res: Response) => {
     const userId = req.user?.id;
+    const userRole = req.user?.role;
     const { bookingId, rating, comment } = req.body;
 
     const files = req.files as {
@@ -36,6 +37,7 @@ const createTripServiceReview = catchAsync(
       Number(rating),
       comment,
       imageUrls,
+      userRole,
     );
     sendResponse(res, {
       statusCode: httpStatus.CREATED,
