@@ -899,6 +899,17 @@ const getAdminTotalEarnings = async (options: IPaginationOptions) => {
       },
       isDeleted: false,
     },
+    include: {
+      user: {
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          profileImage: true,
+          contactNumber: true,
+        },
+      },
+    },
     skip,
     take: limit,
     orderBy: {
