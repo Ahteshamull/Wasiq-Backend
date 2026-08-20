@@ -862,6 +862,7 @@ const getAdminTotalEarnings = async (options: IPaginationOptions) => {
       isDeleted: false,
     },
     _sum: {
+      amount: true,
       admin_commission: true,
     },
   });
@@ -905,7 +906,7 @@ const getAdminTotalEarnings = async (options: IPaginationOptions) => {
   });
 
   return {
-    totalPayments: totalPayments._sum.admin_commission || 0,
+    totalPayments: totalPayments._sum.amount || 0,
     completedRides,
     averageEarnings,
     meta: {
