@@ -245,13 +245,19 @@ const deleteNotification = async (notificationId: string, userId: string) => {
 };
 
 // mark as read notification
-const markAsReadNotification = async (notificationId: string, userId: string) => {
+const markAsReadNotification = async (
+  notificationId: string,
+  userId: string,
+  role?: string
+) => {
+  const where: any = { id: notificationId };
+  if (role !== "ADMIN" && role !== "SUPER_ADMIN") {
+    where.receiverId = userId;
+  }
+
   // find notification
   const notification = await prisma.notifications.findFirst({
-    where: {
-      id: notificationId,
-      receiverId: userId,
-    },
+    where,
   });
 
   if (!notification) {
@@ -271,14 +277,17 @@ const markAsReadNotification = async (notificationId: string, userId: string) =>
 // mark as unread notification
 const markAsUnreadNotification = async (
   notificationId: string,
-  userId: string
+  userId: string,
+  role?: string
 ) => {
+  const where: any = { id: notificationId };
+  if (role !== "ADMIN" && role !== "SUPER_ADMIN") {
+    where.receiverId = userId;
+  }
+
   // find notification
   const notification = await prisma.notifications.findFirst({
-    where: {
-      id: notificationId,
-      receiverId: userId,
-    },
+    where,
   });
 
   if (!notification) {

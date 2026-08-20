@@ -96,9 +96,11 @@ const markAsReadNotification = catchAsync(
   async (req: Request, res: Response) => {
     const notificationId = req.params.notificationId;
     const userId = (req as any).user.id;
+    const role = (req as any).user.role;
     const notification = await NotificationService.markAsReadNotification(
       notificationId,
-      userId
+      userId,
+      role
     );
     sendResponse(res, {
       success: true,
@@ -114,9 +116,11 @@ const markAsUnreadNotification = catchAsync(
   async (req: Request, res: Response) => {
     const notificationId = req.params.notificationId;
     const userId = (req as any).user.id;
+    const role = (req as any).user.role;
     const notification = await NotificationService.markAsUnreadNotification(
       notificationId,
-      userId
+      userId,
+      role
     );
     sendResponse(res, {
       success: true,
