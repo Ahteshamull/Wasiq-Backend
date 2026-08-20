@@ -864,6 +864,7 @@ const getAdminTotalEarnings = async (options: IPaginationOptions) => {
     _sum: {
       amount: true,
       admin_commission: true,
+      agent_commission: true,
     },
   });
 
@@ -886,8 +887,8 @@ const getAdminTotalEarnings = async (options: IPaginationOptions) => {
   });
 
   const averageEarnings =
-    total > 0 && totalPayments._sum.admin_commission
-      ? Number((totalPayments._sum.admin_commission / total).toFixed(2))
+    total > 0 && totalPayments._sum.amount
+      ? Number((totalPayments._sum.amount / total).toFixed(2))
       : 0;
 
   // total payment database info
@@ -907,6 +908,8 @@ const getAdminTotalEarnings = async (options: IPaginationOptions) => {
 
   return {
     totalPayments: totalPayments._sum.amount || 0,
+    totalAdminEarnings: totalPayments._sum.admin_commission || 0,
+    totalAgentEarnings: totalPayments._sum.agent_commission || 0,
     completedRides,
     averageEarnings,
     meta: {
