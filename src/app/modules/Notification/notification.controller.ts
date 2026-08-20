@@ -32,9 +32,8 @@ const sendNotifications = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// get all notifications
 const getAllNotifications = catchAsync(async (req: Request, res: Response) => {
-  const options = pick(req.query, paginationFields);
+  const options = pick(req.query, [...paginationFields, "read"]);
   const notifications = await NotificationService.getAllNotifications(options);
 
   sendResponse(res, {
@@ -63,10 +62,9 @@ const getSingleNotificationById = catchAsync(
   }
 );
 
-// get my all notifications
 const getMyNotifications = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user?.id;
-  const options = pick(req.query, paginationFields);
+  const options = pick(req.query, [...paginationFields, "read"]);
   const result = await NotificationService.getMyNotifications(userId, options);
   sendResponse(res, {
     success: true,
@@ -129,12 +127,12 @@ const markAsUnreadNotification = catchAsync(
   }
 );
 
-// mark all as read notification
 const markAllAsReadNotification = catchAsync(
   async (req: Request, res: Response) => {
     const userId = (req as any).user.id;
+    const role = (req as any).user.role;
     const notification =
-      await NotificationService.markAllAsReadNotification(userId);
+      await NotificationService.markAllAsReadNotification(userId, role);
     sendResponse(res, {
       success: true,
       statusCode: 200,

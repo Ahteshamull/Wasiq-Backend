@@ -131,10 +131,17 @@ const sendNotifications = async (req: any) => {
 };
 
 // get all notifications
-const getAllNotifications = async (options: IPaginationOptions) => {
+const getAllNotifications = async (
+  options: IPaginationOptions & { read?: string },
+) => {
   const { limit, page, skip } = paginationHelpers.calculatedPagination(options);
+  const { read } = options;
 
   const where = {} as any;
+  if (read !== undefined) {
+    where.read = read === "true";
+  }
+
   const result = await prisma.notifications.findMany({
     where,
     skip,
@@ -186,11 +193,16 @@ const getSingleNotificationFromDB = async (
 // get my all notifications
 const getMyNotifications = async (
   userId: string,
-  options: IPaginationOptions,
+  options: IPaginationOptions & { read?: string },
 ) => {
   const { limit, page, skip } = paginationHelpers.calculatedPagination(options);
+  const { read } = options;
 
-  const where = { receiverId: userId };
+  const where: any = { receiverId: userId };
+  if (read !== undefined) {
+    where.read = read === "true";
+  }
+
   const result = await prisma.notifications.findMany({
     where,
     skip,
@@ -284,9 +296,13 @@ const markAsUnreadNotification = async (
 };
 
 // mark all as read notification
-const markAllAsReadNotification = async (userId: string) => {
+const markAllAsReadNotification = async (userId: string, role?: string) => {
+  const where: any = { read: false };
+  if (role !== "ADMIN" && role !== "SUPER_ADMIN") {
+    where.receiverId = userId;
+  }
   return prisma.notifications.updateMany({
-    where: { receiverId: userId, read: false },
+    where,
     data: { read: true },
   });
 };
