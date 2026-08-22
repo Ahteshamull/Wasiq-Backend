@@ -184,7 +184,7 @@ const createAgent = async (payload: any) => {
   const html = generateOtpEmailTemplate(randomOtp);
 
   // send email
-  await emailSender("[Wasik Transfers] OTP Verification Code", user.email, html);
+  await emailSender("Tourenzo OTP Verification Code", user.email, html);
 
   // update user with OTP + expiry
   await prisma.user.update({

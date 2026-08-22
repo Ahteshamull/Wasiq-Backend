@@ -330,7 +330,7 @@ const forgotPassword = async (payload: { email: string }) => {
 
   const html = generateOtpEmailTemplate(randomOtp.toString());
 
-  await emailSender("[Wasik Transfers] OTP Verification Code", userData.email, html);
+  await emailSender("Tourenzo OTP Verification Code", userData.email, html);
 
   await prisma.user.update({
     where: {
