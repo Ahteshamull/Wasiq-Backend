@@ -170,10 +170,24 @@ const createStripeCheckoutSession = async (
     const isAdmin =
       loggedInUser?.role === UserRole.ADMIN ||
       loggedInUser?.role === UserRole.SUPER_ADMIN;
-    const isAgent = loggedInUser?.role === UserRole.AGENT;
 
-    if (!isBookingOwner && !isAdmin && !isAgent) {
-      throw new ApiError(httpStatus.FORBIDDEN, "Unauthorized booking");
+    // Check if agent is the creator of the booking's user
+    let isAgentCreator = false;
+    if (loggedInUser?.role === UserRole.AGENT && booking.userId) {
+      const guestUser = await prisma.user.findUnique({
+        where: { id: booking.userId },
+        select: { createdById: true },
+      });
+      if (guestUser?.createdById === userId) {
+        isAgentCreator = true;
+      }
+    }
+
+    if (!isBookingOwner && !isAdmin && !isAgentCreator) {
+      throw new ApiError(
+        httpStatus.FORBIDDEN,
+        `Unauthorized booking. Your role is ${loggedInUser?.role || 'UNKNOWN'}. You are not the owner, admin, or the creator agent.`
+      );
     }
   }
 
