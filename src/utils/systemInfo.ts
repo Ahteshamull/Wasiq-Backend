@@ -66,31 +66,34 @@ export const getSystemHealthInfo = async () => {
 
   return {
     status: "Service is running smoothly",
-    message: "Welcome to the Wasiq API!",
+    message: "Welcome to the Tourenzo API!",
     systemInfo: {
-        ram: {
-          total: formatBytes(totalMem),
-          free: formatBytes(freeMem),
-          used: formatBytes(usedMem),
-          usagePercentage: ((usedMem / totalMem) * 100).toFixed(2) + "%",
-        },
-        storage,
-        nodeHeap: {
-          total: formatBytes(memoryUsage.heapTotal),
-          used: formatBytes(memoryUsage.heapUsed),
-          rss: formatBytes(memoryUsage.rss),
-        },
-        uptime: {
-          system: formatUptime(uptime),
-          app: formatUptime(appUptime),
-        },
-        environment: {
-          platform: process.platform,
-          arch: process.arch,
-          nodeVersion: process.version,
-          cpus: os.cpus().length,
-          loadAverage: os.loadavg().map((avg) => avg.toFixed(2)).join(", "),
-        }
+      ram: {
+        total: formatBytes(totalMem),
+        free: formatBytes(freeMem),
+        used: formatBytes(usedMem),
+        usagePercentage: ((usedMem / totalMem) * 100).toFixed(2) + "%",
+      },
+      storage,
+      nodeHeap: {
+        total: formatBytes(memoryUsage.heapTotal),
+        used: formatBytes(memoryUsage.heapUsed),
+        rss: formatBytes(memoryUsage.rss),
+      },
+      uptime: {
+        system: formatUptime(uptime),
+        app: formatUptime(appUptime),
+      },
+      environment: {
+        platform: process.platform,
+        arch: process.arch,
+        nodeVersion: process.version,
+        cpus: os.cpus().length,
+        loadAverage: os
+          .loadavg()
+          .map((avg) => avg.toFixed(2))
+          .join(", "),
+      },
     },
     timestamp: new Date().toISOString(),
   };

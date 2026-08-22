@@ -146,7 +146,7 @@ const createUserSupportByMail = async (data: any) => {
           <!-- Footer -->
           <tr>
             <td style="background:#f9fafb; padding:20px; text-align:center; font-size:13px; color:#777;">
-              This is an automated message from <strong>Wasiq Platform Support System</strong>.
+              This is an automated message from <strong>Tourenzo Platform Support System</strong>.
             </td>
           </tr>
 

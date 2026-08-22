@@ -13,7 +13,7 @@ export const generateHealthHTML = (data: any) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wasiq API - System Health</title>
+    <title>Tourenzo API - System Health</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -207,7 +207,7 @@ export const generateHealthHTML = (data: any) => {
 <body>
     <div class="container">
         <header>
-            <h1>Wasiq API Dashboard</h1>
+            <h1>Tourenzo API Dashboard</h1>
             <div class="status-badge">
                 <div class="status-dot"></div>
                 ${status}
@@ -249,7 +249,9 @@ export const generateHealthHTML = (data: any) => {
                     <div class="icon-box"><i data-lucide="hard-drive"></i></div>
                     <div class="card-title">Storage (ROM)</div>
                 </div>
-                ${storageAvailable ? `
+                ${
+                  storageAvailable
+                    ? `
                     <div class="stat-row">
                         <span class="stat-label">Total Space</span>
                         <span class="stat-value">${storage.total}</span>
@@ -269,9 +271,11 @@ export const generateHealthHTML = (data: any) => {
                     <div class="progress-container">
                         <div class="progress-bar" style="width: ${storage.usagePercentage}; background: linear-gradient(to right, #3b82f6, #2dd4bf);"></div>
                     </div>
-                ` : `
+                `
+                    : `
                     <p style="color: var(--danger); font-size: 0.9rem;">${storage}</p>
-                `}
+                `
+                }
             </div>
 
             <!-- Node Heap Card -->
@@ -343,7 +347,7 @@ export const generateHealthHTML = (data: any) => {
 
         <footer>
             <p>Last Updated: ${new Date(timestamp).toLocaleString()}</p>
-            <p style="margin-top: 0.5rem;">&copy; ${new Date().getFullYear()} Wasiq API Infrastructure</p>
+            <p style="margin-top: 0.5rem;">&copy; ${new Date().getFullYear()} Tourenzo API Infrastructure</p>
         </footer>
     </div>
 
