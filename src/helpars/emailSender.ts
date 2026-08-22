@@ -22,10 +22,13 @@ const emailSender = async (subject: string, email: string, html: string) => {
     },
   });
 
+  // Clean up any old branding and prepend the new branding
+  const formattedSubject = `Tourenzo ${subject.replace(/\[?Tourenzo\]?\s*/gi, '').trim()}`;
+
   const mailOptions = {
     from: `"${config.emailSender.fromName}" <${config.emailSender.email}>`,
     to: email,
-    subject,
+    subject: formattedSubject,
     html,
     text: stripHtml(html),
   };
