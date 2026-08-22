@@ -23,7 +23,7 @@ import { IGenericResponse } from "../../../interfaces/common";
 import { IUploadedFile } from "../../../interfaces/file";
 import { uploadFile } from "../../../helpars/fileUploader";
 import { getDateRange } from "../../../helpars/filterByDate";
-import { createOtpEmailTemplate } from "../../../utils/createOtpEmailTemplate";
+import { generateOtpEmailTemplate } from "../../../shared/utils/emailTemplates";
 import emailSender from "../../../helpars/emailSender";
 
 // create user
@@ -181,10 +181,10 @@ const createAgent = async (payload: any) => {
   const otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
 
   // prepare email html
-  const html = createOtpEmailTemplate(randomOtp);
+  const html = generateOtpEmailTemplate(randomOtp);
 
   // send email
-  await emailSender("OTP Verification", user.email, html);
+  await emailSender("[Wasik Transfers] OTP Verification Code", user.email, html);
 
   // update user with OTP + expiry
   await prisma.user.update({

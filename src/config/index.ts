@@ -54,7 +54,7 @@ export default {
     host: process.env.SMTP_HOST || "smtp.gmail.com",
     port: Number(process.env.SMTP_PORT || 587),
     secure: process.env.SMTP_SECURE === "true",
-    fromName: process.env.SMTP_FROM_NAME || "Wasiq Ali",
+    fromName: process.env.SMTP_FROM_NAME || "Tourenzo",
   },
 
   cloudinary: {

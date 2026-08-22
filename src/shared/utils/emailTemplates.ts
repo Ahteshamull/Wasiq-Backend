@@ -487,3 +487,47 @@ export const generateCustomerContactAdminEmailTemplate = (payload: any): string 
     </div>
   `;
 };
+
+export const generateOtpEmailTemplate = (randomOtp: string): string => {
+  return `
+    <div style="background-color: #f5f7fa; padding: 30px 15px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #334155; line-height: 1.6; min-height: 100%;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+        
+        <!-- Header -->
+        <div style="background-color: #0f294a; padding: 25px 30px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1.5px;">WASIK TRANSFERS</h1>
+          <p style="color: #94a3b8; margin: 5px 0 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 2px;">Professional Transfer & Booking</p>
+        </div>
+
+        <div style="padding: 30px; text-align: center;">
+          <!-- Headline -->
+          <div style="margin-bottom: 25px;">
+            <span style="background-color: #e0f2fe; color: #0369a1; padding: 6px 14px; border-radius: 50px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Verification Required</span>
+            <h2 style="color: #0f294a; margin: 15px 0 5px 0; font-size: 20px;">Verify Your Identity</h2>
+            <p style="margin: 0; font-size: 14px; color: #64748b;">Please use the verification code below to complete your action. This code is valid for 5 minutes.</p>
+          </div>
+
+          <!-- OTP Code Display -->
+          <div style="background-color: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 25px; margin: 25px 0; display: inline-block; min-width: 280px;">
+            <p style="margin: 0 0 8px 0; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Your One-Time Password</p>
+            <p style="margin: 0; font-size: 38px; font-weight: 700; color: #0f294a; letter-spacing: 6px; font-family: 'Courier New', Courier, monospace;">${randomOtp}</p>
+          </div>
+
+          <!-- Security Notice -->
+          <div style="background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px 15px; margin: 20px 0; text-align: left; border-radius: 4px;">
+            <p style="margin: 0; font-size: 13px; color: #b45309; font-weight: 500;">
+              ⚠️ <strong>Security Notice:</strong> If you did not request this verification code, please ignore this email or contact support if you suspect unauthorized access.
+            </p>
+          </div>
+
+          <!-- Footer/Brand Support -->
+          <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 30px; text-align: center; font-size: 12px; color: #94a3b8;">
+            <p style="margin: 0 0 5px 0;">This is an automated message. Please do not reply directly to this email.</p>
+            <p style="margin: 0; font-weight: 600; color: #0f294a;">Wasik Support | info@wasiktransfers.com</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `;
+};

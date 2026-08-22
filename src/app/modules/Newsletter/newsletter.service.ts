@@ -35,7 +35,7 @@ const createNewsletterSubscriber = async (email: string) => {
       <p>Thank you for subscribing to our newsletter. You're now part of our community!</p>
       <p>You'll receive the latest updates, news, and exclusive content directly in your inbox.</p>
       <p>Stay tuned for exciting updates!</p>
-      <p>Best regards,<br>Wasiq Ali Team</p>
+      <p>Best regards,<br>Tourenzo Team</p>
     </div>
   `;
 
@@ -173,7 +173,7 @@ const sendDiscountEmailToAllSubscribers = async (
         
         <p style="color: #666; font-size: 14px; text-align: center; margin: 0;">
           Best regards,<br>
-          Wasiq Ali Team
+          Tourenzo Team
         </p>
       </div>
     </div>
@@ -233,7 +233,7 @@ const sendDiscountEmailToSingleSubscriber = async (
         
         <p style="color: #666; font-size: 14px; text-align: center; margin: 0;">
           Best regards,<br>
-          Wasiq Ali Team
+          Tourenzo Team
         </p>
       </div>
     </div>

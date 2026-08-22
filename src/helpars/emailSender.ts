@@ -2,6 +2,15 @@ import nodemailer from "nodemailer";
 import config from "../config";
 import ApiError from "../errors/ApiErrors";
 
+const stripHtml = (html: string): string => {
+  return html
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '') // Remove style blocks
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '') // Remove script blocks
+    .replace(/<[^>]*>/g, '') // Strip HTML tags
+    .replace(/\s+/g, ' ') // Collapse whitespace
+    .trim();
+};
+
 const emailSender = async (subject: string, email: string, html: string) => {
   const transporter = nodemailer.createTransport({
     host: config.emailSender.host,
@@ -18,6 +27,7 @@ const emailSender = async (subject: string, email: string, html: string) => {
     to: email,
     subject,
     html,
+    text: stripHtml(html),
   };
 
   // Send the email
