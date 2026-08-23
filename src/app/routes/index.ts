@@ -21,6 +21,7 @@ import { StoppageRoutes } from "../modules/Stoppage/stoppage.route";
 import { statisticsRoutes } from "../modules/Statistics/statistics.route";
 import { newsletterRoutes } from "../modules/Newsletter/newsletter.route";
 import { reviewRoute } from "../modules/Review/review.route";
+import { MemoryRoutes } from "../modules/Memory/memory.route";
 
 const router = express.Router();
 
@@ -120,6 +121,10 @@ const moduleRoutes = [
   {
     path: "/customer-contacts",
     route: customerContactRoutes,
+  },
+  {
+    path: "/memories",
+    route: MemoryRoutes,
   },
 ];
 
