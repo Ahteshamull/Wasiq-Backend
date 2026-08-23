@@ -531,3 +531,43 @@ export const generateOtpEmailTemplate = (randomOtp: string): string => {
     </div>
   `;
 };
+
+export const generateWelcomeEmailTemplate = (user: any): string => {
+  return `
+    <div style="background-color: #f5f7fa; padding: 30px 15px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #334155; line-height: 1.6; min-height: 100%;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
+        
+        <!-- Header -->
+        <div style="background-color: #0f294a; padding: 25px 30px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1.5px;">WASIK TRANSFERS</h1>
+          <p style="color: #94a3b8; margin: 5px 0 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 2px;">Professional Transfer & Booking</p>
+        </div>
+
+        <div style="padding: 30px; text-align: center;">
+          <!-- Headline -->
+          <div style="margin-bottom: 25px;">
+            <span style="background-color: #d1fae5; color: #059669; padding: 6px 14px; border-radius: 50px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Welcome</span>
+            <h2 style="color: #0f294a; margin: 15px 0 5px 0; font-size: 20px;">Welcome to Wasik Transfers!</h2>
+            <p style="margin: 0; font-size: 14px; color: #64748b;">Hi <strong>${user.fullName || "User"}</strong>,</p>
+          </div>
+
+          <div style="text-align: left; margin-bottom: 25px; font-size: 14px; color: #334155;">
+            <p>Thank you for registering with us. Your account has been successfully created.</p>
+            <p>You can now log in and start using our professional transfer booking services.</p>
+          </div>
+          
+          <div style="margin: 30px 0;">
+             <a href="https://wasiktransfers.com/login" style="background-color: #0f294a; color: #ffffff; text-decoration: none; padding: 12px 25px; border-radius: 6px; font-weight: 600; display: inline-block;">Log In Now</a>
+          </div>
+
+          <!-- Footer/Brand Support -->
+          <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 30px; text-align: center; font-size: 12px; color: #94a3b8;">
+            <p style="margin: 0 0 5px 0;">If you have any questions, please reach out to our customer support.</p>
+            <p style="margin: 0; font-weight: 600; color: #0f294a;">Wasik Support | info@wasiktransfers.com</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `;
+};

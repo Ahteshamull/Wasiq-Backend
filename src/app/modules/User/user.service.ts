@@ -23,7 +23,10 @@ import { IGenericResponse } from "../../../interfaces/common";
 import { IUploadedFile } from "../../../interfaces/file";
 import { uploadFile } from "../../../helpars/fileUploader";
 import { getDateRange } from "../../../helpars/filterByDate";
-import { generateOtpEmailTemplate } from "../../../shared/utils/emailTemplates";
+import {
+  generateOtpEmailTemplate,
+  generateWelcomeEmailTemplate,
+} from "../../../shared/utils/emailTemplates";
 import emailSender from "../../../helpars/emailSender";
 
 // create user
@@ -62,17 +65,9 @@ const createUser = async (payload: any) => {
   });
 
   // send welcome email
-  const welcomeHtml = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <h2 style="color: #333;">Welcome to Our Platform!</h2>
-      <p>Hi ${user.fullName},</p>
-      <p>Thank you for registering with us. Your account has been successfully created.</p>
-      <p>You can now log in and start using our services.</p>
-      <p>Best regards,<br>Team</p>
-    </div>
-  `;
+  const welcomeHtml = generateWelcomeEmailTemplate(user);
 
-  await emailSender("Welcome to Our Platform", user.email, welcomeHtml);
+  await emailSender("Welcome to Tourenzo Platform", user.email, welcomeHtml);
 
   return user;
 };

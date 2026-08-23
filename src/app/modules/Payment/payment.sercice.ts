@@ -528,12 +528,12 @@ const cancelStripeBooking = async (
     departureDate.setUTCHours(0, 0, 0, 0);
   }
 
-  const threeHoursInMs = 3 * 60 * 60 * 1000;
+  const twentyFourHoursInMs = 24 * 60 * 60 * 1000;
   const timeDiff = departureDate.getTime() - Date.now();
-  if (timeDiff < threeHoursInMs) {
+  if (timeDiff < twentyFourHoursInMs) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
-      "Booking cancellation is only allowed at least 3 hours before the travel time starts."
+      "Booking cancellation is only allowed at least 24 hours before the travel time starts."
     );
   }
 
