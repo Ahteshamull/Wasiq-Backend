@@ -584,7 +584,7 @@ model Support {
 model Memory {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   title       String?
-  image       String
+  image       String[]
   description String?
 
   createdAt   DateTime @default(now())

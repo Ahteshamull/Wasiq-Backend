@@ -1,8 +1,9 @@
 export type IMemory = {
   title?: string;
-  image: string;
+  image: string[];
   description?: string;
 };
+
 
 export type IMemoryFilters = {
   search?: string;

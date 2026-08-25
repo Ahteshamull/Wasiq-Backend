@@ -5,10 +5,52 @@ import sendResponse from "../../../shared/sendResponse";
 import httpStatus from "http-status";
 import { pick } from "../../../shared/pick";
 import { paginationFields } from "../../../constants/pagination";
+import { uploadFile } from "../../../helpars/fileUploader";
+import ApiError from "../../../errors/ApiErrors";
 
 // create memory
 const createMemory = catchAsync(async (req: Request, res: Response) => {
-  const result = await MemoryService.createMemory(req.body);
+  const files = req.files as {
+    [fieldname: string]: Express.Multer.File[];
+  };
+
+  let imageUrls: string[] = [];
+
+  // upload all images to Cloudinary
+  if (files?.image && files.image.length > 0) {
+    const uploadPromises = files.image.map((file) =>
+      uploadFile.uploadToCloudinary(file),
+    );
+    const uploadResults = await Promise.all(uploadPromises);
+    imageUrls = uploadResults
+      .filter(
+        (result): result is NonNullable<typeof result> => result !== undefined,
+      )
+      .map((result) => result.secure_url);
+  }
+
+  // Also include any URL strings passed in body
+  if (req.body?.image) {
+    if (Array.isArray(req.body.image)) {
+      imageUrls = [...imageUrls, ...req.body.image];
+    } else if (typeof req.body.image === "string") {
+      imageUrls.push(req.body.image);
+    }
+  }
+
+  if (imageUrls.length === 0) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "At least one image is required for creating a memory",
+    );
+  }
+
+  const memoryData = {
+    ...req.body,
+    image: imageUrls,
+  };
+
+  const result = await MemoryService.createMemory(memoryData);
 
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
@@ -50,7 +92,40 @@ const getSingleMemory = catchAsync(async (req: Request, res: Response) => {
 // update memory
 const updateMemory = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const result = await MemoryService.updateMemory(id, req.body);
+  const files = req.files as {
+    [fieldname: string]: Express.Multer.File[];
+  };
+
+  let imageUrls: string[] = [];
+
+  // upload new images to Cloudinary
+  if (files?.image && files.image.length > 0) {
+    const uploadPromises = files.image.map((file) =>
+      uploadFile.uploadToCloudinary(file),
+    );
+    const uploadResults = await Promise.all(uploadPromises);
+    imageUrls = uploadResults
+      .filter(
+        (result): result is NonNullable<typeof result> => result !== undefined,
+      )
+      .map((result) => result.secure_url);
+  }
+
+  // Include existing image URLs if provided
+  if (req.body?.image) {
+    if (Array.isArray(req.body.image)) {
+      imageUrls = [...imageUrls, ...req.body.image];
+    } else if (typeof req.body.image === "string") {
+      imageUrls.push(req.body.image);
+    }
+  }
+
+  const updateData = {
+    ...req.body,
+    ...(imageUrls.length > 0 ? { image: imageUrls } : {}),
+  };
+
+  const result = await MemoryService.updateMemory(id, updateData);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -80,3 +155,5 @@ export const MemoryController = {
   updateMemory,
   deleteMemory,
 };
+
+

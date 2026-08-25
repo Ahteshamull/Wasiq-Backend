@@ -4,6 +4,8 @@ import { MemoryValidation } from "./memory.validation";
 import { MemoryController } from "./memory.controller";
 import auth from "../../middlewares/auth";
 import { UserRole } from "@prisma/client";
+import { uploadFile } from "../../../helpars/fileUploader";
+import { parseBodyData } from "../../middlewares/parseNestedJson";
 
 const router = express.Router();
 
@@ -11,6 +13,8 @@ const router = express.Router();
 router.post(
   "/create-memory",
   auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  uploadFile.upload.fields([{ name: "image", maxCount: 20 }]),
+  parseBodyData,
   validateRequest(MemoryValidation.createMemoryZodSchema),
   MemoryController.createMemory,
 );
@@ -31,9 +35,12 @@ router.get(
 router.patch(
   "/:id",
   auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  uploadFile.upload.fields([{ name: "image", maxCount: 20 }]),
+  parseBodyData,
   validateRequest(MemoryValidation.updateMemoryZodSchema),
   MemoryController.updateMemory,
 );
+
 
 // delete memory
 router.delete(
@@ -43,3 +50,4 @@ router.delete(
 );
 
 export const MemoryRoutes = router;
+

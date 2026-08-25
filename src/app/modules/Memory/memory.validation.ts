@@ -2,9 +2,7 @@ import { z } from "zod";
 
 const createMemoryZodSchema = z.object({
   body: z.object({
-    image: z.string({
-      required_error: "Image is required",
-    }),
+    image: z.union([z.string(), z.array(z.string())]).optional(),
     title: z.string().optional(),
     description: z.string().optional(),
   }),
@@ -12,7 +10,7 @@ const createMemoryZodSchema = z.object({
 
 const updateMemoryZodSchema = z.object({
   body: z.object({
-    image: z.string().optional(),
+    image: z.union([z.string(), z.array(z.string())]).optional(),
     title: z.string().optional(),
     description: z.string().optional(),
   }),
@@ -22,3 +20,4 @@ export const MemoryValidation = {
   createMemoryZodSchema,
   updateMemoryZodSchema,
 };
+
