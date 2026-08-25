@@ -1,11 +1,19 @@
 // ১. কাস্টম ইউনিক বুকিং আইডি জেনারেটর
 const generateCustomBookingId = (booking: any): string => {
   const service = (booking.serviceType || "BKG").substring(0, 3).toUpperCase();
-  const cleanFrom = (booking.from || "").replace(/[^a-zA-Z]/g, "").substring(0, 3).toUpperCase();
-  const cleanTo = (booking.to || "").replace(/[^a-zA-Z]/g, "").substring(0, 3).toUpperCase();
+  const cleanFrom = (booking.from || "")
+    .replace(/[^a-zA-Z]/g, "")
+    .substring(0, 3)
+    .toUpperCase();
+  const cleanTo = (booking.to || "")
+    .replace(/[^a-zA-Z]/g, "")
+    .substring(0, 3)
+    .toUpperCase();
   const fromLoc = cleanFrom.length >= 2 ? cleanFrom : "LOC";
   const toLoc = cleanTo.length >= 2 ? cleanTo : "LOC";
-  const idPart = booking.id ? booking.id.substring(booking.id.length - 6).toUpperCase() : "XXXXXX";
+  const idPart = booking.id
+    ? booking.id.substring(booking.id.length - 6).toUpperCase()
+    : "XXXXXX";
   return `${service}-${fromLoc}-${toLoc}-${idPart}`;
 };
 
@@ -46,15 +54,18 @@ const formatTimeSlot = (timeSlot: any): string => {
   return "";
 };
 
-export const generateBookingCreatedUserEmailTemplate = (booking: any): string => {
-  const bookingTitle = booking.tripService?.title || `${booking.from} to ${booking.to}`;
+export const generateBookingCreatedUserEmailTemplate = (
+  booking: any,
+): string => {
+  const bookingTitle =
+    booking.tripService?.title || `${booking.from} to ${booking.to}`;
   return `
     <div style="background-color: #f5f7fa; padding: 30px 15px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #334155; line-height: 1.6; min-height: 100%;">
       <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
         
         <!-- Header -->
         <div style="background-color: #0f294a; padding: 25px 30px; text-align: center;">
-          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1.5px;">WASIK TRANSFERS</h1>
+          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1.5px;">Tourenzo Transfers</h1>
           <p style="color: #94a3b8; margin: 5px 0 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 2px;">Professional Transfer & Booking</p>
         </div>
 
@@ -109,30 +120,46 @@ export const generateBookingCreatedUserEmailTemplate = (booking: any): string =>
               </tr>
             </thead>
             <tbody>
-              ${booking.basePrice ? `
+              ${
+                booking.basePrice
+                  ? `
               <tr>
                 <td style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px;">Base Price (Route)</td>
                 <td align="right" style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 600;">$${booking.basePrice}</td>
               </tr>
-              ` : ""}
-              ${booking.vehiclePrice ? `
+              `
+                  : ""
+              }
+              ${
+                booking.vehiclePrice
+                  ? `
               <tr>
                 <td style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px;">Vehicle Class Fee</td>
                 <td align="right" style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 600;">$${booking.vehiclePrice}</td>
               </tr>
-              ` : ""}
-              ${booking.stoppagePrice ? `
+              `
+                  : ""
+              }
+              ${
+                booking.stoppagePrice
+                  ? `
               <tr>
                 <td style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px;">Stoppages/Stops Fee</td>
                 <td align="right" style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 600;">$${booking.stoppagePrice}</td>
               </tr>
-              ` : ""}
-              ${booking.returnPrice ? `
+              `
+                  : ""
+              }
+              ${
+                booking.returnPrice
+                  ? `
               <tr>
                 <td style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px;">Return Journey Fee</td>
                 <td align="right" style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 600;">$${booking.returnPrice}</td>
               </tr>
-              ` : ""}
+              `
+                  : ""
+              }
               <tr style="background-color: #f8fafc;">
                 <td style="padding: 12px; font-weight: bold; color: #0f294a; font-size: 14px; border-bottom-left-radius: 6px; border-top-left-radius: 6px;">Total Price (USD)</td>
                 <td align="right" style="padding: 12px; font-weight: bold; color: #0f294a; font-size: 16px; border-bottom-right-radius: 6px; border-top-right-radius: 6px;">$${booking.totalPrice}</td>
@@ -152,15 +179,18 @@ export const generateBookingCreatedUserEmailTemplate = (booking: any): string =>
   `;
 };
 
-export const generateBookingCreatedAdminEmailTemplate = (booking: any): string => {
-  const bookingTitle = booking.tripService?.title || `${booking.from} to ${booking.to}`;
+export const generateBookingCreatedAdminEmailTemplate = (
+  booking: any,
+): string => {
+  const bookingTitle =
+    booking.tripService?.title || `${booking.from} to ${booking.to}`;
   return `
     <div style="background-color: #f5f7fa; padding: 30px 15px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #334155; line-height: 1.6; min-height: 100%;">
       <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
         
         <!-- Header -->
         <div style="background-color: #0f294a; padding: 25px 30px; text-align: center;">
-          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1.5px;">WASIK TRANSFERS</h1>
+          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1.5px;">Tourenzo Transfers</h1>
           <p style="color: #94a3b8; margin: 5px 0 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 2px;">Professional Transfer & Booking</p>
         </div>
 
@@ -169,7 +199,7 @@ export const generateBookingCreatedAdminEmailTemplate = (booking: any): string =
           <div style="text-align: center; margin-bottom: 25px;">
             <span style="background-color: #e0f2fe; color: #0369a1; padding: 6px 14px; border-radius: 50px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">New Booking Received</span>
             <h2 style="color: #0f294a; margin: 15px 0 5px 0; font-size: 20px;">New Booking Details</h2>
-            <p style="margin: 0; font-size: 14px; color: #64748b;">A new booking has been created on Wasik Transfers by <strong>${booking.clientName || booking.user?.fullName || "Guest User"}</strong> (${booking.user?.email || "No Email"}).</p>
+            <p style="margin: 0; font-size: 14px; color: #64748b;">A new booking has been created on Tourenzo Transfers by <strong>${booking.clientName || booking.user?.fullName || "Guest User"}</strong> (${booking.user?.email || "No Email"}).</p>
           </div>
 
           <!-- Grid Info (Outlook-friendly table) -->
@@ -215,30 +245,46 @@ export const generateBookingCreatedAdminEmailTemplate = (booking: any): string =
               </tr>
             </thead>
             <tbody>
-              ${booking.basePrice ? `
+              ${
+                booking.basePrice
+                  ? `
               <tr>
                 <td style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px;">Base Price (Route)</td>
                 <td align="right" style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 600;">$${booking.basePrice}</td>
               </tr>
-              ` : ""}
-              ${booking.vehiclePrice ? `
+              `
+                  : ""
+              }
+              ${
+                booking.vehiclePrice
+                  ? `
               <tr>
                 <td style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px;">Vehicle Class Fee</td>
                 <td align="right" style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 600;">$${booking.vehiclePrice}</td>
               </tr>
-              ` : ""}
-              ${booking.stoppagePrice ? `
+              `
+                  : ""
+              }
+              ${
+                booking.stoppagePrice
+                  ? `
               <tr>
                 <td style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px;">Stoppages/Stops Fee</td>
                 <td align="right" style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 600;">$${booking.stoppagePrice}</td>
               </tr>
-              ` : ""}
-              ${booking.returnPrice ? `
+              `
+                  : ""
+              }
+              ${
+                booking.returnPrice
+                  ? `
               <tr>
                 <td style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px;">Return Journey Fee</td>
                 <td align="right" style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 600;">$${booking.returnPrice}</td>
               </tr>
-              ` : ""}
+              `
+                  : ""
+              }
               <tr style="background-color: #f8fafc;">
                 <td style="padding: 12px; font-weight: bold; color: #0f294a; font-size: 14px; border-bottom-left-radius: 6px; border-top-left-radius: 6px;">Total Price (USD)</td>
                 <td align="right" style="padding: 12px; font-weight: bold; color: #0f294a; font-size: 16px; border-bottom-right-radius: 6px; border-top-right-radius: 6px;">$${booking.totalPrice}</td>
@@ -248,7 +294,7 @@ export const generateBookingCreatedAdminEmailTemplate = (booking: any): string =
 
           <!-- Footer/Brand Support -->
           <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center; font-size: 12px; color: #94a3b8;">
-            <p style="margin: 0 0 5px 0;">This is an administrative notification email generated automatically by Wasik Transfers.</p>
+            <p style="margin: 0 0 5px 0;">This is an administrative notification email generated automatically by Tourenzo Transfers.</p>
             <p style="margin: 0; font-weight: 600; color: #0f294a;">Wasik Admin Panel</p>
           </div>
         </div>
@@ -259,14 +305,15 @@ export const generateBookingCreatedAdminEmailTemplate = (booking: any): string =
 };
 
 export const generateBookingConfirmedEmailTemplate = (booking: any): string => {
-  const bookingTitle = booking.tripService?.title || `${booking.from} to ${booking.to}`;
+  const bookingTitle =
+    booking.tripService?.title || `${booking.from} to ${booking.to}`;
   return `
     <div style="background-color: #f5f7fa; padding: 30px 15px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #334155; line-height: 1.6; min-height: 100%;">
       <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
         
         <!-- Header -->
         <div style="background-color: #0f294a; padding: 25px 30px; text-align: center;">
-          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1.5px;">WASIK TRANSFERS</h1>
+          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1.5px;">Tourenzo Transfers</h1>
           <p style="color: #94a3b8; margin: 5px 0 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 2px;">Professional Transfer & Booking</p>
         </div>
 
@@ -321,30 +368,46 @@ export const generateBookingConfirmedEmailTemplate = (booking: any): string => {
               </tr>
             </thead>
             <tbody>
-              ${booking.basePrice ? `
+              ${
+                booking.basePrice
+                  ? `
               <tr>
                 <td style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px;">Base Price (Route)</td>
                 <td align="right" style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 600;">$${booking.basePrice}</td>
               </tr>
-              ` : ""}
-              ${booking.vehiclePrice ? `
+              `
+                  : ""
+              }
+              ${
+                booking.vehiclePrice
+                  ? `
               <tr>
                 <td style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px;">Vehicle Class Fee</td>
                 <td align="right" style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 600;">$${booking.vehiclePrice}</td>
               </tr>
-              ` : ""}
-              ${booking.stoppagePrice ? `
+              `
+                  : ""
+              }
+              ${
+                booking.stoppagePrice
+                  ? `
               <tr>
                 <td style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px;">Stoppages/Stops Fee</td>
                 <td align="right" style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 600;">$${booking.stoppagePrice}</td>
               </tr>
-              ` : ""}
-              ${booking.returnPrice ? `
+              `
+                  : ""
+              }
+              ${
+                booking.returnPrice
+                  ? `
               <tr>
                 <td style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px;">Return Journey Fee</td>
                 <td align="right" style="padding: 10px 12px; border-bottom: 1px solid #f1f5f9; font-size: 13px; font-weight: 600;">$${booking.returnPrice}</td>
               </tr>
-              ` : ""}
+              `
+                  : ""
+              }
               <tr style="background-color: #f8fafc;">
                 <td style="padding: 12px; font-weight: bold; color: #059669; font-size: 14px; border-bottom-left-radius: 6px; border-top-left-radius: 6px;">Amount Paid (USD)</td>
                 <td align="right" style="padding: 12px; font-weight: bold; color: #059669; font-size: 16px; border-bottom-right-radius: 6px; border-top-right-radius: 6px;">$${booking.totalPrice}</td>
@@ -365,14 +428,15 @@ export const generateBookingConfirmedEmailTemplate = (booking: any): string => {
 };
 
 export const generateBookingCancelledEmailTemplate = (booking: any): string => {
-  const bookingTitle = booking.tripService?.title || `${booking.from} to ${booking.to}`;
+  const bookingTitle =
+    booking.tripService?.title || `${booking.from} to ${booking.to}`;
   return `
     <div style="background-color: #f5f7fa; padding: 30px 15px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #334155; line-height: 1.6; min-height: 100%;">
       <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
         
         <!-- Header -->
         <div style="background-color: #0f294a; padding: 25px 30px; text-align: center;">
-          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1.5px;">WASIK TRANSFERS</h1>
+          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1.5px;">Tourenzo Transfers</h1>
           <p style="color: #94a3b8; margin: 5px 0 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 2px;">Professional Transfer & Booking</p>
         </div>
 
@@ -417,7 +481,9 @@ export const generateBookingCancelledEmailTemplate = (booking: any): string => {
   `;
 };
 
-export const generateCustomerContactUserEmailTemplate = (payload: any): string => {
+export const generateCustomerContactUserEmailTemplate = (
+  payload: any,
+): string => {
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
       <h2 style="color: #333; text-align: center;">Thank You for Contacting Us!</h2>
@@ -453,7 +519,9 @@ export const generateCustomerContactUserEmailTemplate = (payload: any): string =
   `;
 };
 
-export const generateCustomerContactAdminEmailTemplate = (payload: any): string => {
+export const generateCustomerContactAdminEmailTemplate = (
+  payload: any,
+): string => {
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
       <h2 style="color: #d32f2f; text-align: center; margin-bottom: 20px;">New Contact Message Received</h2>
@@ -461,7 +529,7 @@ export const generateCustomerContactAdminEmailTemplate = (payload: any): string 
         Hello Admin,
       </p>
       <p style="color: #666; line-height: 1.6;">
-        A customer has submitted a contact form on Wasik Transfers. Here are the details of the submission:
+        A customer has submitted a contact form on Tourenzo Transfers. Here are the details of the submission:
       </p>
       <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0; border-left: 4px solid #d32f2f;">
         <h3 style="color: #333; margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 8px;">Submission Information:</h3>
@@ -481,7 +549,7 @@ export const generateCustomerContactAdminEmailTemplate = (payload: any): string 
       </p>
       <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
         <p style="color: #999; font-size: 11px; margin: 0;">
-          Wasik Transfers Notification Service
+          Tourenzo Transfers Notification Service
         </p>
       </div>
     </div>
@@ -495,7 +563,7 @@ export const generateOtpEmailTemplate = (randomOtp: string): string => {
         
         <!-- Header -->
         <div style="background-color: #0f294a; padding: 25px 30px; text-align: center;">
-          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1.5px;">WASIK TRANSFERS</h1>
+          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1.5px;">Tourenzo Transfers</h1>
           <p style="color: #94a3b8; margin: 5px 0 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 2px;">Professional Transfer & Booking</p>
         </div>
 
@@ -539,7 +607,7 @@ export const generateWelcomeEmailTemplate = (user: any): string => {
         
         <!-- Header -->
         <div style="background-color: #0f294a; padding: 25px 30px; text-align: center;">
-          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1.5px;">WASIK TRANSFERS</h1>
+          <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 1.5px;">Tourenzo Transfers</h1>
           <p style="color: #94a3b8; margin: 5px 0 0 0; font-size: 13px; text-transform: uppercase; letter-spacing: 2px;">Professional Transfer & Booking</p>
         </div>
 
@@ -547,7 +615,7 @@ export const generateWelcomeEmailTemplate = (user: any): string => {
           <!-- Headline -->
           <div style="margin-bottom: 25px;">
             <span style="background-color: #d1fae5; color: #059669; padding: 6px 14px; border-radius: 50px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Welcome</span>
-            <h2 style="color: #0f294a; margin: 15px 0 5px 0; font-size: 20px;">Welcome to Wasik Transfers!</h2>
+            <h2 style="color: #0f294a; margin: 15px 0 5px 0; font-size: 20px;">Welcome to Tourenzo Transfers!</h2>
             <p style="margin: 0; font-size: 14px; color: #64748b;">Hi <strong>${user.fullName || "User"}</strong>,</p>
           </div>
 

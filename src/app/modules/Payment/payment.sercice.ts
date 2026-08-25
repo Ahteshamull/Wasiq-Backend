@@ -153,6 +153,11 @@ const createStripeCheckoutSession = async (
   // find booking first
   const booking = await prisma.tripServiceBooking.findUnique({
     where: { id: tripServiceBookingId },
+    include: {
+      user: {
+        select: { id: true, email: true, role: true, stripeAccountId: true, isStripeConnected: true, createdById: true },
+      },
+    },
   });
 
   if (!booking) {
@@ -163,35 +168,43 @@ const createStripeCheckoutSession = async (
   if (userId) {
     const loggedInUser = await prisma.user.findUnique({
       where: { id: userId },
-      select: { role: true },
+      select: { id: true, role: true, email: true },
     });
 
-    const isBookingOwner = booking.userId === userId;
+    const isBookingOwner =
+      booking.userId === userId ||
+      (Boolean(loggedInUser?.email) &&
+        Boolean(booking.user?.email) &&
+        loggedInUser?.email?.toLowerCase() === booking.user?.email?.toLowerCase());
+
     const isAdmin =
       loggedInUser?.role === UserRole.ADMIN ||
       loggedInUser?.role === UserRole.SUPER_ADMIN;
 
-    // Check if agent is the creator of the booking's user
+    // Check if agent is the creator of the booking's user or if booking was placed by the agent
     let isAgentCreator = false;
-    if (loggedInUser?.role === UserRole.AGENT && booking.userId) {
-      const guestUser = await prisma.user.findUnique({
-        where: { id: booking.userId },
-        select: { createdById: true },
-      });
-      if (guestUser?.createdById === userId) {
+    if (loggedInUser?.role === UserRole.AGENT) {
+      if (booking.userId === userId || booking.user?.createdById === userId) {
         isAgentCreator = true;
       }
     }
 
     if (!isBookingOwner && !isAdmin && !isAgentCreator) {
-      throw new ApiError(
-        httpStatus.FORBIDDEN,
-        `Unauthorized booking. Your role is ${loggedInUser?.role || 'UNKNOWN'}. You are not the owner, admin, or the creator agent.`
-      );
+      // Allow USER and AGENT to complete checkout if they are paying for a guest booking or their own session
+      const isAllowedRole =
+        loggedInUser?.role === UserRole.USER ||
+        loggedInUser?.role === UserRole.AGENT;
+
+      if (!isAllowedRole) {
+        throw new ApiError(
+          httpStatus.FORBIDDEN,
+          `Unauthorized booking. Your role is ${loggedInUser?.role || 'UNKNOWN'}. You are not authorized to pay for this booking.`
+        );
+      }
     }
   }
 
-  const finalUserId = booking.userId;
+  const finalUserId = booking.userId || userId;
   if (!finalUserId) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
@@ -200,7 +213,7 @@ const createStripeCheckoutSession = async (
   }
 
   // find user with role
-  const user = await prisma.user.findUnique({
+  const user = booking.user || (await prisma.user.findUnique({
     where: { id: finalUserId },
     select: {
       id: true,
@@ -210,7 +223,8 @@ const createStripeCheckoutSession = async (
       isStripeConnected: true,
       createdById: true,
     },
-  });
+  }));
+
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, "User not found");
   }
@@ -255,32 +269,37 @@ const createStripeCheckoutSession = async (
 
   const amount = Math.round(booking.totalPrice * 100);
 
-  const checkoutSession = await stripe.checkout.sessions.create({
-    payment_method_types: ["card"],
-    mode: "payment",
+    const frontendBase = config.frontend_url || "http://localhost:5174";
+    const successUrl = config.stripe.checkout_success_url || `${frontendBase}/payment-confirmation`;
+    const cancelUrl = config.stripe.checkout_cancel_url || `${frontendBase}/payment-cancle`;
 
-    line_items: [
-      {
-        price_data: {
-          currency: "EUR",
-          product_data: {
-            name: "Trip Service Booking",
-            description: description || "Trip Service Payment",
+    const checkoutSession = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      mode: "payment",
+
+      line_items: [
+        {
+          price_data: {
+            currency: "EUR",
+            product_data: {
+              name: "Trip Service Booking",
+              description: description || "Trip Service Payment",
+            },
+            unit_amount: amount,
           },
-          unit_amount: amount,
+          quantity: 1,
         },
-        quantity: 1,
+      ],
+
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+
+      metadata: {
+        userId: finalUserId,
+        tripServiceBookingId,
       },
-    ],
+    });
 
-    success_url: config.stripe.checkout_success_url,
-    cancel_url: config.stripe.checkout_cancel_url,
-
-    metadata: {
-      userId: finalUserId,
-      tripServiceBookingId,
-    },
-  });
 
   await prisma.payment.create({
     data: {

@@ -17,6 +17,7 @@ import { paginationHelpers } from "../../../helpars/paginationHelper";
 import { Secret } from "jsonwebtoken";
 import config from "../../../config";
 import { jwtHelpers } from "../../../helpars/jwtHelpers";
+import stripe from "../../../helpars/stripe";
 
 // create trip service booking
 const createTripServiceBooking = async (
@@ -64,33 +65,39 @@ const createTripServiceBooking = async (
 
   // 2. If guestInfo is provided, create or resolve the guest user
   if (guestInfo) {
-    const existingUser = await prisma.user.findUnique({
-      where: { email: guestInfo.email },
-    });
-
-    let guestUser: User;
-    if (existingUser) {
-      guestUser = existingUser;
+    if (findUser && findUser.role === UserRole.USER) {
+      // Logged-in regular USER keeps their own user ID
+      finalUserId = findUser.id;
     } else {
-      guestUser = await prisma.user.create({
-        data: {
-          fullName: `${guestInfo.firstName} ${guestInfo.lastName}`,
-          email: guestInfo.email,
-          contactNumber: guestInfo.phoneNumber,
-          role: UserRole.USER,
-          createdById: findUser?.role === UserRole.AGENT ? findUser.id : undefined,
-        },
+      const existingUser = await prisma.user.findUnique({
+        where: { email: guestInfo.email },
       });
-    }
 
-    finalUserId = guestUser.id;
+      let guestUser: User;
+      if (existingUser) {
+        guestUser = existingUser;
+      } else {
+        guestUser = await prisma.user.create({
+          data: {
+            fullName: `${guestInfo.firstName} ${guestInfo.lastName}`,
+            email: guestInfo.email,
+            contactNumber: guestInfo.phoneNumber,
+            role: UserRole.USER,
+            createdById: findUser?.role === UserRole.AGENT ? findUser.id : undefined,
+          },
+        });
+      }
 
-    // If there was no logged-in user, treat this as a guest booking flow
-    if (!findUser) {
-      isGuestUser = true;
-      findUser = guestUser;
+      finalUserId = guestUser.id;
+
+      // If there was no logged-in user, treat this as a guest booking flow
+      if (!findUser) {
+        isGuestUser = true;
+        findUser = guestUser;
+      }
     }
   }
+
 
   if (!findUser) {
     throw new ApiError(
@@ -99,12 +106,39 @@ const createTripServiceBooking = async (
     );
   }
 
-  if (findUser && findUser.role === UserRole.AGENT && !findUser.isStripeConnected) {
-    throw new ApiError(
-      httpStatus.BAD_REQUEST,
-      "You must complete your Stripe onboarding first to receive commission before making a booking."
-    );
+  if (findUser && findUser.role === UserRole.AGENT) {
+    if (!findUser.isStripeConnected && findUser.stripeAccountId) {
+      try {
+        const account = await stripe.accounts.retrieve(findUser.stripeAccountId);
+        const cardPayments = account.capabilities?.card_payments;
+        const transfers = account.capabilities?.transfers;
+        const requirements = account.requirements?.currently_due || [];
+
+        if (
+          (account.details_submitted && requirements.length === 0) ||
+          (cardPayments === "active" && transfers === "active") ||
+          account.charges_enabled ||
+          account.payouts_enabled
+        ) {
+          await prisma.user.update({
+            where: { id: findUser.id },
+            data: { isStripeConnected: true },
+          });
+          findUser.isStripeConnected = true;
+        }
+      } catch (stripeErr) {
+        console.warn("Stripe verification check during booking error:", stripeErr);
+      }
+    }
+
+    if (!findUser.isStripeConnected) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        "You must complete your Stripe onboarding first to receive commission before making a booking."
+      );
+    }
   }
+
 
   let accessToken: string | undefined;
   if (isGuestUser) {
