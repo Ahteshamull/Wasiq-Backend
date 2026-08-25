@@ -41,7 +41,6 @@ router.patch(
   MemoryController.updateMemory,
 );
 
-
 // delete memory
 router.delete(
   "/:id",
@@ -50,4 +49,3 @@ router.delete(
 );
 
 export const MemoryRoutes = router;
-

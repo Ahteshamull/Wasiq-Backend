@@ -592,3 +592,4 @@ model Memory {
 
   @@map("memories")
 }
+

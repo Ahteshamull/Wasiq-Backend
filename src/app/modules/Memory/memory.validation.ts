@@ -20,4 +20,3 @@ export const MemoryValidation = {
   createMemoryZodSchema,
   updateMemoryZodSchema,
 };
-
