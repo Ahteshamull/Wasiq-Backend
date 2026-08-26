@@ -227,96 +227,103 @@ const createTripServiceBooking = async (
   }
 
   // create booking with transaction
-  const result = await prisma.$transaction(async (tx) => {
-    const booking = await tx.tripServiceBooking.create({
-      data: {
-        clientName,
-        from,
-        fromLat,
-        fromLng,
-        to,
-        toLat,
-        toLng,
-        serviceType: serviceType,
-        timeSlot,
-        travelDate,
-        passengers,
-        luggage,
-        distanceKm,
-        basePrice,
-        vehiclePrice,
-        stoppagePrice,
-        returnPrice,
-        totalPrice,
-        isReturn,
-        returnDate,
-        user_role: findUser.role as any,
-        status: BookingStatus.PENDING,
-        userId: finalUserId,
-        tripServiceId: tripServiceId || undefined,
-      } as any,
-    });
+  const result = await prisma.$transaction(
+    async (tx) => {
+      const booking = await tx.tripServiceBooking.create({
+        data: {
+          clientName,
+          from,
+          fromLat,
+          fromLng,
+          to,
+          toLat,
+          toLng,
+          serviceType: serviceType,
+          timeSlot,
+          travelDate,
+          passengers,
+          luggage,
+          distanceKm,
+          basePrice,
+          vehiclePrice,
+          stoppagePrice,
+          returnPrice,
+          totalPrice,
+          isReturn,
+          returnDate,
+          user_role: findUser.role as any,
+          status: BookingStatus.PENDING,
+          userId: finalUserId,
+          tripServiceId: tripServiceId || undefined,
+        } as any,
+      });
 
-    // create booking vehicles
-    if (bookingVehicles.length > 0) {
-      const vehicleIds = bookingVehicles.map((v) => v.vehicleId);
-      const tripServiceVehicles = tripServiceId
-        ? await tx.tripServiceVehicle.findMany({
-            where: {
-              tripServiceId,
-              vehicleId: { in: vehicleIds },
-            },
-          })
-        : [];
+      // create booking vehicles
+      if (bookingVehicles.length > 0) {
+        const vehicleIds = bookingVehicles.map((v) => v.vehicleId);
+        const tripServiceVehicles = tripServiceId
+          ? await tx.tripServiceVehicle.findMany({
+              where: {
+                tripServiceId,
+                vehicleId: { in: vehicleIds },
+              },
+            })
+          : [];
 
-      const bookingVehicleData = bookingVehicles.map((bv) => {
-        const vehicle = vehicles.find((v) => v.id === bv.vehicleId);
-        if (!vehicle) return null;
+        const bookingVehicleData = bookingVehicles.map((bv) => {
+          const vehicle = vehicles.find((v) => v.id === bv.vehicleId);
+          if (!vehicle) return null;
 
-        let price = 0;
+          let price = 0;
 
-        // 1. Check TripServiceVehicle price if tripServiceId is provided
-        if (tripServiceId) {
-          const tsv = tripServiceVehicles.find((t) => t.vehicleId === bv.vehicleId);
-          if (tsv) {
-            price = tsv.price;
+          // 1. Check TripServiceVehicle price if tripServiceId is provided
+          if (tripServiceId) {
+            const tsv = tripServiceVehicles.find((t) => t.vehicleId === bv.vehicleId);
+            if (tsv) {
+              price = tsv.price;
+            }
           }
-        }
 
-        return tx.bookingVehicle.create({
-          data: {
-            bookingId: booking.id,
-            vehicleId: bv.vehicleId,
-            quantity: bv.quantity,
-            price,
-          },
+          return tx.bookingVehicle.create({
+            data: {
+              bookingId: booking.id,
+              vehicleId: bv.vehicleId,
+              quantity: bv.quantity,
+              price,
+            },
+          });
         });
-      });
 
-      await Promise.all(bookingVehicleData.filter(Boolean));
-    }
+        await Promise.all(bookingVehicleData.filter(Boolean));
+      }
 
-    // create booking stoppages
-    if (bookingStoppages.length > 0) {
-      const bookingStoppageData = bookingStoppages.map((bs) => {
-        const stoppage = stoppages.find((s) => s.id === bs.stoppageId);
-        if (!stoppage) return null;
+      // create booking stoppages
+      if (bookingStoppages.length > 0) {
+        const bookingStoppageData = bookingStoppages.map((bs) => {
+          const stoppage = stoppages.find((s) => s.id === bs.stoppageId);
+          if (!stoppage) return null;
 
-        return tx.bookingStoppage.create({
-          data: {
-            bookingId: booking.id,
-            stoppageId: bs.stoppageId,
-            quantity: bs.quantity,
-            price: stoppage.price,
-          },
+          return tx.bookingStoppage.create({
+            data: {
+              bookingId: booking.id,
+              stoppageId: bs.stoppageId,
+              quantity: bs.quantity,
+              price: stoppage.price,
+            },
+          });
         });
-      });
 
-      await Promise.all(bookingStoppageData.filter(Boolean));
+        await Promise.all(bookingStoppageData.filter(Boolean));
+      }
+
+      return booking;
+    },
+    {
+      maxWait: 15000,
+      timeout: 30000,
     }
+  );
 
-    return booking;
-  });
 
   // Send notification to the user (Client)
   const bookingTitle = tripService?.title || `${from} to ${to}`;
@@ -482,24 +489,31 @@ const deleteTripServiceBooking = async (id: string) => {
     throw new ApiError(httpStatus.NOT_FOUND, "Booking not found");
   }
 
-  const result = await prisma.$transaction(async (tx) => {
-    // delete related booking vehicles
-    await tx.bookingVehicle.deleteMany({
-      where: { bookingId: id },
-    });
+  const result = await prisma.$transaction(
+    async (tx) => {
+      // delete related booking vehicles
+      await tx.bookingVehicle.deleteMany({
+        where: { bookingId: id },
+      });
 
-    // delete related booking stoppages
-    await tx.bookingStoppage.deleteMany({
-      where: { bookingId: id },
-    });
+      // delete related booking stoppages
+      await tx.bookingStoppage.deleteMany({
+        where: { bookingId: id },
+      });
 
-    // delete the booking
-    const deletedBooking = await tx.tripServiceBooking.delete({
-      where: { id },
-    });
+      // delete the booking
+      const deletedBooking = await tx.tripServiceBooking.delete({
+        where: { id },
+      });
 
-    return deletedBooking;
-  });
+      return deletedBooking;
+    },
+    {
+      maxWait: 10000,
+      timeout: 25000,
+    }
+  );
+
 
   return result;
 };

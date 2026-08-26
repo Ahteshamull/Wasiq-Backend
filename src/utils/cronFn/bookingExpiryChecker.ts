@@ -20,27 +20,34 @@ export const startBookingExpiryChecker = () => {
 
       if (expiredBookings.length > 0) {
         for (const booking of expiredBookings) {
-          await prisma.$transaction(async (tx) => {
-            // Delete related BookingVehicles
-            await tx.bookingVehicle.deleteMany({
-              where: { bookingId: booking.id },
-            });
+          await prisma.$transaction(
+            async (tx) => {
+              // Delete related BookingVehicles
+              await tx.bookingVehicle.deleteMany({
+                where: { bookingId: booking.id },
+              });
 
-            // Delete related BookingStoppages
-            await tx.bookingStoppage.deleteMany({
-              where: { bookingId: booking.id },
-            });
+              // Delete related BookingStoppages
+              await tx.bookingStoppage.deleteMany({
+                where: { bookingId: booking.id },
+              });
 
-            // Delete related unpaid Payments (if any exists)
-            await tx.payment.deleteMany({
-              where: { tripServiceBookingId: booking.id },
-            });
+              // Delete related unpaid Payments (if any exists)
+              await tx.payment.deleteMany({
+                where: { tripServiceBookingId: booking.id },
+              });
 
-            // Delete the booking itself
-            await tx.tripServiceBooking.delete({
-              where: { id: booking.id },
-            });
-          });
+              // Delete the booking itself
+              await tx.tripServiceBooking.delete({
+                where: { id: booking.id },
+              });
+            },
+            {
+              maxWait: 10000,
+              timeout: 25000,
+            }
+          );
+
 
           console.log(` Auto-removed expired PENDING booking: ${booking.id}`);
         }
