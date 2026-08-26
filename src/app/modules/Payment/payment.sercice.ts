@@ -584,21 +584,28 @@ const cancelStripeBooking = async (
     }
   }
 
-  const result = await prisma.$transaction(async (tx) => {
-    const updatedBooking = await tx.tripServiceBooking.update({
-      where: { id: bookingId },
-      data: { status: BookingStatus.CANCELLED },
-    });
-
-    if (booking.tripServiceId) {
-      await tx.tripService.update({
-        where: { id: booking.tripServiceId },
-        data: { isService: EveryServiceStatus.AVAILABLE },
+  const result = await prisma.$transaction(
+    async (tx) => {
+      const updatedBooking = await tx.tripServiceBooking.update({
+        where: { id: bookingId },
+        data: { status: BookingStatus.CANCELLED },
       });
-    }
 
-    return updatedBooking;
-  });
+      if (booking.tripServiceId) {
+        await tx.tripService.update({
+          where: { id: booking.tripServiceId },
+          data: { isService: EveryServiceStatus.AVAILABLE },
+        });
+      }
+
+      return updatedBooking;
+    },
+    {
+      maxWait: 10000,
+      timeout: 25000,
+    }
+  );
+
 
   try {
     const recipientEmail = booking.user?.email;
