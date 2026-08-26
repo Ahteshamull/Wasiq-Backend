@@ -22,6 +22,7 @@ import { statisticsRoutes } from "../modules/Statistics/statistics.route";
 import { newsletterRoutes } from "../modules/Newsletter/newsletter.route";
 import { reviewRoute } from "../modules/Review/review.route";
 import { MemoryRoutes } from "../modules/Memory/memory.route";
+import { navigationRouteRoutes } from "../modules/Navigation_Route/navigationRoute.route";
 
 const router = express.Router();
 
@@ -126,7 +127,12 @@ const moduleRoutes = [
     path: "/memories",
     route: MemoryRoutes,
   },
+  {
+    path: "/navigation-routes",
+    route: navigationRouteRoutes,
+  },
 ];
+
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));
 

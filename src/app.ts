@@ -4,6 +4,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import path from "path";
 import bodyParser from "body-parser";
+import compression from "compression";
 import router from "./app/routes";
 import GlobalErrorHandler from "./app/middlewares/globalErrorHandler";
 
@@ -22,6 +23,14 @@ const app: Application = express();
 
 // AWS / Reverse Proxy setup
 app.set("trust proxy", true);
+
+// Enable Gzip/Brotli response compression for all outgoing requests
+app.use(
+  compression({
+    level: 6,
+    threshold: 1024, // only compress responses above 1KB
+  })
+);
 
 export const corsOptions = {
   origin: true,
@@ -45,6 +54,7 @@ app.use(
 app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
+
 
 app.use(express.static("public"));
 
