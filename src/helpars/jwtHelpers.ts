@@ -13,12 +13,13 @@ const generateToken = (
 };
 
 const verifyToken = (token: string, secret: Secret): JwtPayload => {
-  // console.log(token,secret)
   try {
-    const decoded = jwt.verify(token, secret) as JwtPayload;
+    const cleanToken = token.startsWith("Bearer ")
+      ? token.slice(7).trim()
+      : token.trim();
+    const decoded = jwt.verify(cleanToken, secret) as JwtPayload;
     return decoded;
   } catch (err) {
-    console.error("JWT verification error:", err);
     throw err;
   }
 };

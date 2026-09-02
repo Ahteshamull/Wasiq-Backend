@@ -18,9 +18,17 @@ const auth = (...roles: string[]) => {
     next: NextFunction
   ) => {
     try {
-      const token = req.headers.authorization;
+      let token = req.headers.authorization;
 
       if (!token) {
+        throw new ApiError(httpStatus.UNAUTHORIZED, "You are not authorized!");
+      }
+
+      if (token.startsWith("Bearer ")) {
+        token = token.slice(7).trim();
+      }
+
+      if (!token || token === "undefined" || token === "null") {
         throw new ApiError(httpStatus.UNAUTHORIZED, "You are not authorized!");
       }
 
@@ -66,8 +74,16 @@ export const optionalAuth = () => {
     next: NextFunction
   ) => {
     try {
-      const token = req.headers.authorization;
+      let token = req.headers.authorization;
       if (!token) {
+        return next();
+      }
+
+      if (token.startsWith("Bearer ")) {
+        token = token.slice(7).trim();
+      }
+
+      if (!token || token === "undefined" || token === "null") {
         return next();
       }
 

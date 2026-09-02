@@ -11,9 +11,17 @@ const optionalAuth = async (
   next: NextFunction
 ) => {
   try {
-    const token = req.headers.authorization;
+    let token = req.headers.authorization;
 
     if (token) {
+      if (token.startsWith("Bearer ")) {
+        token = token.slice(7).trim();
+      }
+
+      if (!token || token === "undefined" || token === "null") {
+        return next();
+      }
+
       const verifiedUser = jwtHelpers.verifyToken(
         token,
         config.jwt.jwt_secret as Secret
