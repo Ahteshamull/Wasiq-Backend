@@ -372,7 +372,7 @@ const getDistance = (
 const getFamousPlaces = async (
   latitude: number,
   longitude: number,
-  radius: number = 35000,
+  radius: number = 30000,
 ) => {
   const url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json";
 
@@ -511,8 +511,8 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
         currentPoint.lng,
       );
 
-      if (accumulatedDistance >= 35000) {
-        // 25km distance interval
+      if (accumulatedDistance >= 30000) {
+        // 30km distance interval
         sampledPoints.push(currentPoint);
         lastSampledPoint = currentPoint;
         accumulatedDistance = 0;
@@ -541,7 +541,7 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
             "https://maps.googleapis.com/maps/api/place/nearbysearch/json";
           const params = {
             location: `${point.lat},${point.lng}`,
-            radius: "35000", // Focused 35km search radius
+            radius: "30000", // Focused 30km search radius
             type: searchType,
             key: GOOGLE_MAPS_API_KEY,
           };
@@ -613,9 +613,9 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
       };
     });
 
-    // 3. Final proximity filter: Only keep stoppages that are within 35km of the actual highway segments
+    // 3. Final proximity filter: Only keep stoppages that are within 30km of the actual highway segments
     const filteredStoppages = finalStoppages.filter(
-      (item) => item.roadDistance <= 35.0,
+      (item) => item.roadDistance <= 30.0,
     );
 
     // Helper function to normalize names for strict matching
@@ -631,7 +631,7 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
     const matchedStoppages: any[] = [];
     const matchedPlaceIds = new Set<string>();
 
-    // A. Scan through all items in popularStoppagesWithCoords.json and check if they lie within 35km perpendicular distance of the highway
+    // A. Scan through all items in popularStoppagesWithCoords.json and check if they lie within 30km perpendicular distance of the highway
     for (const popItem of popularStoppagesData as any[]) {
       if (!popItem.location || !popItem.location.lat || !popItem.location.lng) {
         continue;
@@ -658,8 +658,8 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
 
       const roadDistanceKm = parseFloat((minDistance / 1000).toFixed(1));
 
-      // If the popular stoppage is within 35km perpendicular distance of the actual route, include it!
-      if (roadDistanceKm <= 35.0) {
+      // If the popular stoppage is within 30km perpendicular distance of the actual route, include it!
+      if (roadDistanceKm <= 30.0) {
         matchedStoppages.push({
           id: popItem.id,
           name: popItem.name,
@@ -762,57 +762,65 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
     const isPureSouthWestRoute = isSouthWestRegion(origin, from.location) && isSouthWestRegion(destination, to.location);
 
     const forceCliffsOfMoher =
-      hasGalway &&
-      !isPureSouthWestRoute && (
-        (isOriginInRedBorder && isDestinationInRedBorder) ||
-        (isLimerickCorkOrKillarney(from.location) && isGalway(to.location)) ||
-        (isGalway(from.location) && isLimerickCorkOrKillarney(to.location))
-      );
+      hasGalway ||
+      (isOriginInRedBorder && isDestinationInRedBorder) ||
+      (isLimerickCorkOrKillarney(from.location) && isGalway(to.location)) ||
+      (isGalway(from.location) && isLimerickCorkOrKillarney(to.location));
 
-    if (
-      forceCliffsOfMoher &&
-      !matchedPlaceIds.has("ChIJ84G4C68BW0gR5sC4SJBGOig")
-    ) {
-      const cliffsItem = (popularStoppagesData as any[]).find(
-        (item) => item.id === "ChIJ84G4C68BW0gR5sC4SJBGOig",
-      );
-      if (cliffsItem) {
-        let minDistance = Infinity;
-        for (let i = 0; i < routePoints.length - 1; i++) {
-          const p1 = routePoints[i];
-          const p2 = routePoints[i + 1];
-          const dist = getDistanceToSegment(cliffsItem.location, p1, p2);
-          if (dist < minDistance) {
-            minDistance = dist;
+    if (forceCliffsOfMoher) {
+      const forcedIds = [
+        "ChIJ84G4C68BW0gR5sC4SJBGOig", // Cliffs of Moher
+        "ChIJS_Xz41kHW0gRsP4xl6nHAAo", // Doolin
+      ];
+
+      for (const forcedId of forcedIds) {
+        if (!matchedPlaceIds.has(forcedId)) {
+          const forcedItem = (popularStoppagesData as any[]).find(
+            (item) => item.id === forcedId,
+          );
+          if (forcedItem) {
+            let minDistance = Infinity;
+            for (let i = 0; i < routePoints.length - 1; i++) {
+              const p1 = routePoints[i];
+              const p2 = routePoints[i + 1];
+              const dist = getDistanceToSegment(forcedItem.location, p1, p2);
+              if (dist < minDistance) {
+                minDistance = dist;
+              }
+            }
+            if (minDistance === Infinity) {
+              minDistance = getDistance(
+                forcedItem.location.lat,
+                forcedItem.location.lng,
+                origin.lat,
+                origin.lng,
+              );
+            }
+            const roadDistanceKm = parseFloat((minDistance / 1000).toFixed(1));
+
+            matchedStoppages.push({
+              id: forcedItem.id,
+              name: forcedItem.name,
+              googleName: forcedItem.googleName || forcedItem.name,
+              level: forcedItem.level ?? 1,
+              address: forcedItem.address || "",
+              rating: forcedItem.rating ?? 0,
+              totalRatings: forcedItem.totalRatings ?? 0,
+              location: forcedItem.location,
+              image: forcedItem.image
+                ? forcedItem.image.map((img: string) =>
+                    img.replace(/key=[^&]+/, `key=${GOOGLE_MAPS_API_KEY}`),
+                  )
+                : [],
+              types: forcedItem.types || [],
+              city: forcedItem.city || "",
+              cityLocation: forcedItem.cityLocation || null,
+              roadDistance: roadDistanceKm,
+              roaddistance: roadDistanceKm,
+            });
+            matchedPlaceIds.add(forcedItem.id);
           }
         }
-        if (minDistance === Infinity) {
-          minDistance = getDistance(
-            cliffsItem.location.lat,
-            cliffsItem.location.lng,
-            origin.lat,
-            origin.lng,
-          );
-        }
-        const roadDistanceKm = parseFloat((minDistance / 1000).toFixed(1));
-
-        matchedStoppages.push({
-          id: cliffsItem.id,
-          name: cliffsItem.name,
-          googleName: cliffsItem.googleName || cliffsItem.name,
-          level: cliffsItem.level ?? 1,
-          address: cliffsItem.address || "",
-          rating: cliffsItem.rating ?? 0,
-          totalRatings: cliffsItem.totalRatings ?? 0,
-          location: cliffsItem.location,
-          image: cliffsItem.image ? cliffsItem.image.map((img: string) => img.replace(/key=[^&]+/, `key=${GOOGLE_MAPS_API_KEY}`)) : [],
-          types: cliffsItem.types || [],
-          city: cliffsItem.city || "",
-          cityLocation: cliffsItem.cityLocation || null,
-          roadDistance: roadDistanceKm,
-          roaddistance: roadDistanceKm,
-        });
-        matchedPlaceIds.add(cliffsItem.id);
       }
     }
 
