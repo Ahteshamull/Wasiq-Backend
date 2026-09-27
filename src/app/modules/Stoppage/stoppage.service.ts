@@ -762,12 +762,10 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
     const isPureSouthWestRoute = isSouthWestRegion(origin, from.location) && isSouthWestRegion(destination, to.location);
 
     const forceCliffsOfMoher =
-      hasGalway &&
-      !isPureSouthWestRoute && (
-        (isOriginInRedBorder && isDestinationInRedBorder) ||
-        (isLimerickCorkOrKillarney(from.location) && isGalway(to.location)) ||
-        (isGalway(from.location) && isLimerickCorkOrKillarney(to.location))
-      );
+      hasGalway ||
+      (isOriginInRedBorder && isDestinationInRedBorder) ||
+      (isLimerickCorkOrKillarney(from.location) && isGalway(to.location)) ||
+      (isGalway(from.location) && isLimerickCorkOrKillarney(to.location));
 
     if (forceCliffsOfMoher) {
       const forcedIds = [
