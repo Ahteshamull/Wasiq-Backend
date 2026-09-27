@@ -680,24 +680,22 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
       }
     }
 
-    // Force "Cliffs of Moher" if routing between Galway and Limerick, Cork, or Killarney,
-    // or if routing between any two locations within the specified red border region in Western/Southern Ireland.
-    const RED_BORDER_POLYGON = [
-      { lat: 53.65, lng: -10.20 }, // NW corner above Letterfrack
-      { lat: 53.62, lng: -9.30 },  // North near Cong
-      { lat: 53.58, lng: -8.70 },  // North-East near Tuam
-      { lat: 52.92, lng: -8.00 },  // East of Nenagh
-      { lat: 52.70, lng: -7.70 },  // East of Thurles
-      { lat: 52.25, lng: -7.00 },  // East of Waterford
-      { lat: 52.05, lng: -7.00 },  // Sea south-east of Tramore
-      { lat: 51.80, lng: -7.80 },  // Sea south of Youghal
-      { lat: 51.55, lng: -8.50 },  // Sea south of Kinsale
-      { lat: 51.35, lng: -9.50 },  // Sea south of Schull
-      { lat: 51.50, lng: -10.10 }, // Sea west of Beara Peninsula
-      { lat: 51.75, lng: -10.50 }, // Sea west of Waterville
-      { lat: 52.10, lng: -10.60 }, // Sea west of Dingle
-      { lat: 52.65, lng: -9.90 },  // Sea west of Kilkee/Loop Head
-      { lat: 53.45, lng: -10.20 }, // Sea west of Clifden
+    // Polygon representing the Red Circle region in Western / South-Western Ireland (Clare, Limerick, Kerry, Cork, Tipperary, Waterford)
+    const RED_MARK_POLYGON = [
+      { lat: 53.15, lng: -9.45 }, // North Clare / Burren coast (just south of Galway Bay)
+      { lat: 53.08, lng: -8.90 }, // Near Gort / Clare-Galway border
+      { lat: 52.95, lng: -8.20 }, // Lough Derg / near Nenagh
+      { lat: 52.70, lng: -7.65 }, // East of Thurles
+      { lat: 52.35, lng: -7.45 }, // East of Clonmel
+      { lat: 52.15, lng: -7.05 }, // Waterford / Tramore coast
+      { lat: 51.85, lng: -7.80 }, // Youghal coast
+      { lat: 51.55, lng: -8.45 }, // Kinsale coast
+      { lat: 51.35, lng: -9.55 }, // Mizen Head / Schull coast
+      { lat: 51.50, lng: -10.20 }, // Beara Peninsula
+      { lat: 51.75, lng: -10.55 }, // Waterville / Iveragh Peninsula
+      { lat: 52.15, lng: -10.55 }, // Dingle Peninsula
+      { lat: 52.65, lng: -9.95 },  // Loop Head / Kilkee
+      { lat: 52.95, lng: -9.45 },  // Cliffs of Moher / Doolin coast
     ];
 
     const isPointInPolygon = (
@@ -717,55 +715,45 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
       return inside;
     };
 
-    const isLimerickCorkOrKillarney = (loc: string): boolean => {
-      const normalized = (loc || "").toLowerCase();
-      return (
-        normalized.includes("limerick") ||
-        normalized.includes("cork") ||
-        normalized.includes("killarney")
-      );
-    };
+    const RED_MARK_KEYWORDS = [
+      "clare", "limerick", "kerry", "cork", "tipperary", "waterford",
+      "killarney", "ennis", "tralee", "dingle", "clonmel", "cashel",
+      "cahir", "nenagh", "thurles", "shannon", "adare", "kinsale",
+      "cobh", "doolin", "moher", "tramore", "dungarvan", "kenmare",
+      "bantry", "skibbereen", "mallow", "fermoy", "newcastle west",
+      "kilkee", "lahinch", "ballybunion", "mitchelstown", "charleville",
+      "blarney", "bunratty", "killorglin", "listowel", "cahersiveen",
+      "lismore", "carrick-on-suir", "midleton", "youghal", "bandon", "clonakilty"
+    ];
 
-    const isGalway = (loc: string): boolean => {
-      const normalized = (loc || "").toLowerCase();
-      return normalized.includes("galway");
-    };
-
-    const isInGalwayRegion = (point: { lat: number; lng: number }, locationName: string): boolean => {
+    const isGalway = (point: { lat: number; lng: number }, locationName: string): boolean => {
       const normalized = (locationName || "").toLowerCase();
       if (normalized.includes("galway")) {
         return true;
       }
-      return point.lat >= 53.0 && point.lat <= 53.7 && point.lng >= -10.3 && point.lng <= -8.0;
+      return point.lat >= 53.20 && point.lat <= 53.40 && point.lng >= -9.25 && point.lng <= -8.85;
     };
 
-    const isSouthWestRegion = (point: { lat: number; lng: number }, locationName: string): boolean => {
-      const normalized = (locationName || "").toLowerCase();
-      if (normalized.includes("galway") || normalized.includes("clare")) {
+    const isInRedMark = (point: { lat: number; lng: number }, locationName: string): boolean => {
+      if (isGalway(point, locationName)) {
         return false;
       }
-      if (
-        normalized.includes("cork") ||
-        normalized.includes("kerry") ||
-        normalized.includes("killarney") ||
-        normalized.includes("limerick")
-      ) {
-        return true;
-      }
-      return point.lat < 52.75 && point.lng <= -7.0;
+      const normalized = (locationName || "").toLowerCase();
+      const hasKeyword = RED_MARK_KEYWORDS.some((kw) => normalized.includes(kw));
+      const inPolygon = isPointInPolygon(point, RED_MARK_POLYGON);
+
+      return hasKeyword || inPolygon;
     };
 
-    const isOriginInRedBorder = isPointInPolygon(origin, RED_BORDER_POLYGON);
-    const isDestinationInRedBorder = isPointInPolygon(destination, RED_BORDER_POLYGON);
+    const isOriginInRed = isInRedMark(origin, from.location);
+    const isDestInRed = isInRedMark(destination, to.location);
+    const isOriginGalway = isGalway(origin, from.location);
+    const isDestGalway = isGalway(destination, to.location);
 
-    const hasGalway = isInGalwayRegion(origin, from.location) || isInGalwayRegion(destination, to.location);
-    const isPureSouthWestRoute = isSouthWestRegion(origin, from.location) && isSouthWestRegion(destination, to.location);
-
+    // Force "Cliffs of Moher" & "Doolin" ONLY when routing from Red Mark to Galway, OR from Galway to Red Mark
     const forceCliffsOfMoher =
-      hasGalway ||
-      (isOriginInRedBorder && isDestinationInRedBorder) ||
-      (isLimerickCorkOrKillarney(from.location) && isGalway(to.location)) ||
-      (isGalway(from.location) && isLimerickCorkOrKillarney(to.location));
+      (isOriginInRed && isDestGalway) ||
+      (isOriginGalway && isDestInRed);
 
     if (forceCliffsOfMoher) {
       const forcedIds = [
