@@ -372,7 +372,7 @@ const getDistance = (
 const getFamousPlaces = async (
   latitude: number,
   longitude: number,
-  radius: number = 30000,
+  radius: number = 25000,
 ) => {
   const url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json";
 
@@ -511,8 +511,8 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
         currentPoint.lng,
       );
 
-      if (accumulatedDistance >= 30000) {
-        // 30km distance interval
+      if (accumulatedDistance >= 25000) {
+        // 25km distance interval
         sampledPoints.push(currentPoint);
         lastSampledPoint = currentPoint;
         accumulatedDistance = 0;
@@ -541,7 +541,7 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
             "https://maps.googleapis.com/maps/api/place/nearbysearch/json";
           const params = {
             location: `${point.lat},${point.lng}`,
-            radius: "30000", // Focused 30km search radius
+            radius: "25000", // Focused 25km search radius
             type: searchType,
             key: GOOGLE_MAPS_API_KEY,
           };
@@ -613,9 +613,9 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
       };
     });
 
-    // 3. Final proximity filter: Only keep stoppages that are within 30km of the actual highway segments
+    // 3. Final proximity filter: Only keep stoppages that are within 25km of the actual highway segments
     const filteredStoppages = finalStoppages.filter(
-      (item) => item.roadDistance <= 30.0,
+      (item) => item.roadDistance <= 25.0,
     );
 
     // Helper function to normalize names for strict matching
@@ -631,7 +631,7 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
     const matchedStoppages: any[] = [];
     const matchedPlaceIds = new Set<string>();
 
-    // A. Scan through all items in popularStoppagesWithCoords.json and check if they lie within 30km perpendicular distance of the highway
+    // A. Scan through all items in popularStoppagesWithCoords.json and check if they lie within 25km perpendicular distance of the highway
     for (const popItem of popularStoppagesData as any[]) {
       if (!popItem.location || !popItem.location.lat || !popItem.location.lng) {
         continue;
@@ -658,8 +658,8 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
 
       const roadDistanceKm = parseFloat((minDistance / 1000).toFixed(1));
 
-      // If the popular stoppage is within 30km perpendicular distance of the actual route, include it!
-      if (roadDistanceKm <= 30.0) {
+      // If the popular stoppage is within 25km perpendicular distance of the actual route, include it!
+      if (roadDistanceKm <= 25.0) {
         matchedStoppages.push({
           id: popItem.id,
           name: popItem.name,
@@ -762,10 +762,12 @@ const searchableStoppageIntoDb = async (payload: ISearchableStoppage) => {
     const isPureSouthWestRoute = isSouthWestRegion(origin, from.location) && isSouthWestRegion(destination, to.location);
 
     const forceCliffsOfMoher =
-      hasGalway ||
-      (isOriginInRedBorder && isDestinationInRedBorder) ||
-      (isLimerickCorkOrKillarney(from.location) && isGalway(to.location)) ||
-      (isGalway(from.location) && isLimerickCorkOrKillarney(to.location));
+      hasGalway &&
+      !isPureSouthWestRoute && (
+        (isOriginInRedBorder && isDestinationInRedBorder) ||
+        (isLimerickCorkOrKillarney(from.location) && isGalway(to.location)) ||
+        (isGalway(from.location) && isLimerickCorkOrKillarney(to.location))
+      );
 
     if (forceCliffsOfMoher) {
       const forcedIds = [
