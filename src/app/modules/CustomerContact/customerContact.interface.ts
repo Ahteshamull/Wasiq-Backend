@@ -13,6 +13,8 @@ export type ICustomerContactFilters = {
   search?: string;
   minDate?: string;
   maxDate?: string;
+  startDate?: string;
+  endDate?: string;
 };
 
 export type ICustomerContactResponse = {

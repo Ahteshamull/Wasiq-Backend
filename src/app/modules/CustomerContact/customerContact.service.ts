@@ -20,14 +20,27 @@ import {
 const createCustomerContact = async (
   payload: ICustomerContact,
 ): Promise<CustomerContact> => {
+  const name = payload.name || payload.fullName || "";
+  const fullName = payload.fullName || payload.name || "";
+  const phone = payload.phone || payload.contactNumber || "";
+  const contactNumber = payload.contactNumber || payload.phone || "";
+
+  const dataToSave = {
+    ...payload,
+    name,
+    fullName,
+    phone,
+    contactNumber,
+  };
+
   const result = await prisma.customerContact.create({
-    data: payload,
+    data: dataToSave,
   });
 
   // 1. send confirmation email to customer
   try {
-    const userEmailSubject = "Thank you for contacting us - We've received your message";
-    const userEmailHtml = generateCustomerContactUserEmailTemplate(payload);
+    const userEmailSubject = "Thank you for contacting Tourenzo - We've received your inquiry";
+    const userEmailHtml = generateCustomerContactUserEmailTemplate(dataToSave);
     await emailSender(userEmailSubject, payload.email, userEmailHtml);
   } catch (error) {
     console.error("Failed to send customer confirmation email:", error);
@@ -35,8 +48,10 @@ const createCustomerContact = async (
 
   // 2. send notification email to admin(s)
   try {
-    const adminEmailSubject = `New Customer Inquiry: ${payload.subject}`;
-    const adminEmailHtml = generateCustomerContactAdminEmailTemplate(payload);
+    const adminEmailSubject = payload.subject
+      ? `New Customer Inquiry: ${payload.subject}`
+      : `New Travel Inquiry from ${name || payload.email}`;
+    const adminEmailHtml = generateCustomerContactAdminEmailTemplate(dataToSave);
 
     if (config.contactMailAddress) {
       // Send to the specified contact email address in configuration
@@ -78,14 +93,20 @@ const getAllCustomerContacts = async (
 ): Promise<IGenericResponse<CustomerContact[]>> => {
   const { page, limit, skip } = paginationHelpers.calculatedPagination(options);
 
-  const { search, minDate, maxDate } = filters;
+  const { search, minDate, maxDate, startDate, endDate } = filters;
 
   const andConditions: Prisma.CustomerContactWhereInput[] = [];
 
-  // search by fullName, email, contactNumber, subject
+  // search across name, fullName, email, phone, contactNumber, address, subject
   if (search) {
     andConditions.push({
       OR: [
+        {
+          name: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
         {
           fullName: {
             contains: search,
@@ -99,7 +120,19 @@ const getAllCustomerContacts = async (
           },
         },
         {
+          phone: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+        {
           contactNumber: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+        {
+          address: {
             contains: search,
             mode: "insensitive",
           },
@@ -114,7 +147,26 @@ const getAllCustomerContacts = async (
     });
   }
 
-  // filter by date range
+  // filter by travel startDate or endDate if provided
+  if (startDate) {
+    andConditions.push({
+      startDate: {
+        contains: startDate,
+        mode: "insensitive",
+      },
+    });
+  }
+
+  if (endDate) {
+    andConditions.push({
+      endDate: {
+        contains: endDate,
+        mode: "insensitive",
+      },
+    });
+  }
+
+  // filter by creation date range
   if (minDate || maxDate) {
     const dateFilter: Prisma.DateTimeFilter = {};
     if (minDate) dateFilter.gte = new Date(minDate);
@@ -181,11 +233,25 @@ const updateCustomerContact = async (
     throw new ApiError(httpStatus.NOT_FOUND, "Customer contact not found");
   }
 
+  const updateData: Partial<ICustomerContact> = { ...payload };
+  if (payload.name && !payload.fullName) {
+    updateData.fullName = payload.name;
+  }
+  if (payload.fullName && !payload.name) {
+    updateData.name = payload.fullName;
+  }
+  if (payload.phone && !payload.contactNumber) {
+    updateData.contactNumber = payload.phone;
+  }
+  if (payload.contactNumber && !payload.phone) {
+    updateData.phone = payload.contactNumber;
+  }
+
   const result = await prisma.customerContact.update({
     where: {
       id,
     },
-    data: payload,
+    data: updateData,
   });
 
   return result;

@@ -26,7 +26,13 @@ const createCustomerContact = catchAsync(
 // get all customer contacts
 const getAllCustomerContacts = catchAsync(
   async (req: Request, res: Response) => {
-    const filters = pick(req.query, ["search", "minDate", "maxDate"]);
+    const filters = pick(req.query, [
+      "search",
+      "minDate",
+      "maxDate",
+      "startDate",
+      "endDate",
+    ]);
     const options = pick(req.query, paginationFields);
 
     const result = await CustomerContactService.getAllCustomerContacts(
