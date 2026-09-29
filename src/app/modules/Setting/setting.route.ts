@@ -6,7 +6,7 @@ import { UserRole } from "@prisma/client";
 const router = express.Router();
 
 // get about App
-router.get("/about", auth(), SettingController.getAbout);
+router.get("/about", SettingController.getAbout);
 
 //  create app about
 router.post(
