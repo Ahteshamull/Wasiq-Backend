@@ -1007,19 +1007,27 @@
     }
   },
   {
-    "id": "fallback-athlone-castle",
+    "id": "ChIJGbmdJsJJXEgR9kuyRMsXrhs",
     "name": "Athlone Castle",
-    "googleName": "Athlone castle",
+    "googleName": "Athlone Castle Visitor Centre",
     "level": 2,
-    "address": "Ireland",
-    "rating": 0,
-    "totalRatings": 0,
+    "address": "Saint Peter's Tce, Athlone And Bigmeadow, Athlone, Co. Westmeath, N37 A6D7, Ireland",
+    "rating": 4.4,
+    "totalRatings": 1454,
     "location": {
-      "lat": 53.4129,
-      "lng": -8.2439
+      "lat": 53.4230603,
+      "lng": -7.9428036
     },
-    "image": [],
-    "types": [],
+    "image": [
+      "https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=Aa-ngMa_x-jN4rGuTLE_nBm693g9laxE9MAxK-eZUBvceta1wczy2OSuaLs_3y4Mzl4qf2JQpOvTKZEY8OfZYnxpznedBCa7pNonis_40uXbNjiFetH_5B1oiutCN2ajH2rq6_2gFEtYPCCTdl9w-pP8E5CyO80mIQAiC7clmGufhMdiuUSMgDJW1CsDiXI1YTMHcG8OEtV2YOVZDeRwb1fyvPYoOYYuaacmnQQkJbDJAIArzlihQA8GrE3IuD_mbS7sAz4KPTqpurGHMubbE_YxheS9LqLaA0kv24eyGNxBYYPEvN5naP6uzx58xBNEf3jILJFTIknTh3UrqHkkQnpCppXE4riA-4KaLBf_2WgRCpGUP0KuBW8xfJNV6nwj1v2Ef0SpxLlEZ-JbcqnY1ddNqiCxnWhzfMMuB5MrROW3wuyVwA&key=AIzaSyDjCp_VhWICcD18znGPP6cySn2TNTisju4"
+    ],
+    "types": [
+      "establishment",
+      "museum",
+      "point_of_interest",
+      "tourist_attraction",
+      "travel_agency"
+    ],
     "city": "Westmeath",
     "cityLocation": {
       "lat": 53.5389,
