@@ -179,6 +179,7 @@ model TripService {
   groupType         String
   images            String[]
   description       String
+  shortDescription  String?
   serviceType       ServiceType
   routeType         String?
   tourDays          Int?

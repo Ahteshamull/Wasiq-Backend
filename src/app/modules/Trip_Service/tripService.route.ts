@@ -13,7 +13,7 @@ const router = express.Router();
 router.post(
   "/",
   auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
-  uploadFile.upload.fields([{ name: "image", maxCount: 40 }]),
+  uploadFile.upload.fields([{ name: "image", maxCount: 10 }]),
   parseBodyData,
   validateRequest(TripServiceValidation.createTripServiceValidationSchema),
   TripServiceController.createTripService,
@@ -28,7 +28,7 @@ router.get("/", TripServiceController.getAllTripServices);
 router.post(
   "/explore",
   auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
-  uploadFile.upload.fields([{ name: "image", maxCount: 40 }]),
+  uploadFile.upload.fields([{ name: "image", maxCount: 10 }]),
   parseBodyData,
   validateRequest(TripServiceValidation.createExploreServiceValidationSchema),
   TripServiceController.createExploreService,
@@ -54,7 +54,7 @@ router.get(
 router.post(
   "/day-trip",
   auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
-  uploadFile.upload.fields([{ name: "image", maxCount: 40 }]),
+  uploadFile.upload.fields([{ name: "image", maxCount: 10 }]),
   parseBodyData,
   validateRequest(TripServiceValidation.createDayTripServiceValidationSchema),
   TripServiceController.createDayTripService,
@@ -81,7 +81,7 @@ router.get(
 router.post(
   "/multi-day-tour",
   auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
-  uploadFile.upload.fields([{ name: "image", maxCount: 40 }]),
+  uploadFile.upload.fields([{ name: "image", maxCount: 10 }]),
   parseBodyData,
   validateRequest(
     TripServiceValidation.createMultiDayTourTripServiceValidationSchema,
@@ -161,7 +161,7 @@ router.get("/:id", TripServiceController.getSingleTripService);
 router.patch(
   "/:id",
   auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
-  uploadFile.upload.fields([{ name: "image", maxCount: 40 }]),
+  uploadFile.upload.fields([{ name: "image", maxCount: 10 }]),
   parseBodyData,
   validateRequest(TripServiceValidation.updateTripServiceValidationSchema),
   TripServiceController.updateTripService,

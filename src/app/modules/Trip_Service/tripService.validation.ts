@@ -42,6 +42,12 @@ const createTripServiceValidationSchema = z.object({
     description: z
       .string()
       .min(10, "Description must be at least 10 characters"),
+    shortDescription: z
+      .string()
+      .trim()
+      .min(1, "Short description cannot be empty")
+      .max(300, "Short description must be at most 300 characters")
+      .optional(),
     serviceType: z
       .enum([
         "BY_THE_HOUR",
@@ -140,6 +146,12 @@ const createDayTripServiceValidationSchema = z.object({
     description: z
       .string()
       .min(10, "Description must be at least 10 characters"),
+    shortDescription: z
+      .string()
+      .trim()
+      .min(1, "Short description cannot be empty")
+      .max(300, "Short description must be at most 300 characters")
+      .optional(),
     serviceType: z
       .enum([
         "BY_THE_HOUR",
@@ -363,6 +375,12 @@ const updateTripServiceValidationSchema = z.object({
     description: z
       .string()
       .min(10, "Description must be at least 10 characters")
+      .optional(),
+    shortDescription: z
+      .string()
+      .trim()
+      .min(1, "Short description cannot be empty")
+      .max(300, "Short description must be at most 300 characters")
       .optional(),
     serviceType: z
       .enum([

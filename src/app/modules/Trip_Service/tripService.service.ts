@@ -408,9 +408,6 @@ const createDayTripService = async (
 
   const { vehicles, ...restPayload } = payload;
   let vehiclesData: Prisma.TripServiceVehicleCreateWithoutTripServiceInput[] = [];
-  
-  console.log("DEBUG: Received payload:", JSON.stringify(payload, null, 2));
-  console.log("DEBUG: Extracted vehicles:", vehicles);
 
   if (vehicles && vehicles.length > 0) {
     const vehicleIds = vehicles.map((v) => v.vehicleId);
@@ -1547,6 +1544,7 @@ const getTripsByLocationForModal = async (
       from: true,
       title: true,
       description: true,
+      shortDescription: true,
       travelTimeMinutes: true,
       tourDays: true,
       price: true,
