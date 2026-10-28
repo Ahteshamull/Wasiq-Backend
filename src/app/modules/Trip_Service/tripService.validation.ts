@@ -1,5 +1,26 @@
 import { z } from "zod";
 
+const dayTripStoppageSchema = z.object({
+  title: z.string().min(1, "Stoppage title is required"),
+  description: z.string().min(1, "Stoppage description is required"),
+  images: z
+    .array(z.string().min(1))
+    .min(1, "Each stoppage needs at least one image")
+    .max(2, "Each stoppage can have at most 2 images")
+    .optional(),
+  imageCount: z
+    .preprocess(
+      (val) => (val === undefined || val === "" ? undefined : Number(val)),
+      z
+        .number()
+        .int()
+        .min(1, "Each stoppage needs at least one image")
+        .max(2, "Each stoppage can have at most 2 images")
+        .optional(),
+    )
+    .optional(),
+});
+
 // create trip service validation schema
 const createTripServiceValidationSchema = z.object({
   body: z.object({
@@ -152,6 +173,7 @@ const createDayTripServiceValidationSchema = z.object({
       .min(1, "Short description cannot be empty")
       .max(300, "Short description must be at most 300 characters")
       .optional(),
+    stoppages: z.array(dayTripStoppageSchema).optional(),
     serviceType: z
       .enum([
         "BY_THE_HOUR",
@@ -382,6 +404,7 @@ const updateTripServiceValidationSchema = z.object({
       .min(1, "Short description cannot be empty")
       .max(300, "Short description must be at most 300 characters")
       .optional(),
+    stoppages: z.array(dayTripStoppageSchema).optional(),
     serviceType: z
       .enum([
         "BY_THE_HOUR",

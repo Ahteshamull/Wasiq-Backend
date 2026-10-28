@@ -207,6 +207,7 @@ model TripService {
   tripServiceBookings  TripServiceBooking[]
   tripServiceStoppages TripServiceStoppage[]
   tripServiceVehicles  TripServiceVehicle[]
+  dayTripStoppages     DayTripStoppage[]
 
   @@index([serviceType, status])
   @@index([userId])
@@ -252,6 +253,23 @@ model TripServiceStoppage {
 
   @@unique([tripServiceId, stoppageId])
   @@map("trip_service_stoppages")
+}
+
+model DayTripStoppage {
+  id            String @id @default(auto()) @map("_id") @db.ObjectId
+  tripServiceId String @db.ObjectId
+  title         String
+  description   String
+  images        String[]
+  order         Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tripService TripService @relation(fields: [tripServiceId], references: [id], onDelete: Cascade)
+
+  @@index([tripServiceId])
+  @@map("day_trip_stoppages")
 }
 
 model Vehicle {

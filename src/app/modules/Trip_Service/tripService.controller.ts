@@ -148,6 +148,73 @@ const getByTheHourPopularTripServices = catchAsync(
 
 // ----------------- day trip -----------------
 
+const resolveStoppageImages = async (
+  stoppages:
+    | {
+        title: string;
+        description: string;
+        images?: string[];
+        imageCount?: number;
+      }[]
+    | undefined,
+  files?: Express.Multer.File[],
+) => {
+  if (!Array.isArray(stoppages)) {
+    return { stoppages: undefined };
+  }
+
+  const uploadedUrls: string[] = [];
+  if (files && files.length > 0) {
+    const uploadResults = await Promise.all(
+      files.map((file) => uploadFile.uploadToCloudinary(file)),
+    );
+    for (const result of uploadResults) {
+      if (!result?.secure_url) {
+        return { error: "Failed to upload a stoppage image" };
+      }
+      uploadedUrls.push(result.secure_url);
+    }
+  }
+
+  let uploadIndex = 0;
+  const resolved: { title: string; description: string; images: string[] }[] =
+    [];
+  for (const stoppage of stoppages) {
+    const existingImages = (stoppage.images || []).filter(Boolean);
+    if (existingImages.length > 2) {
+      return { error: "Each stoppage can have at most 2 images" };
+    }
+
+    let images = existingImages;
+    if (images.length === 0) {
+      const count = stoppage.imageCount ?? 1;
+      if (!Number.isInteger(count) || count < 1 || count > 2) {
+        return { error: "Each stoppage can have 1 or 2 images" };
+      }
+      images = uploadedUrls.slice(uploadIndex, uploadIndex + count);
+      uploadIndex += count;
+      if (images.length !== count) {
+        return { error: "Each stoppage requires 1 or 2 images" };
+      }
+    }
+
+    resolved.push({
+      title: stoppage.title,
+      description: stoppage.description,
+      images,
+    });
+  }
+
+  if (uploadIndex !== uploadedUrls.length) {
+    return {
+      error:
+        "Set imageCount to 2 for a stoppage that should use two stoppageImage files",
+    };
+  }
+
+  return { stoppages: resolved };
+};
+
 // create day trip service
 const createDayTripService = catchAsync(async (req: Request, res: Response) => {
   const files = req.files as {
@@ -181,10 +248,26 @@ const createDayTripService = catchAsync(async (req: Request, res: Response) => {
       .map((result) => result.secure_url);
   }
 
+  const stoppageImages = await resolveStoppageImages(
+    tripServiceData.stoppages,
+    files?.stoppageImage,
+  );
+  if ("error" in stoppageImages) {
+    return sendResponse(res, {
+      statusCode: httpStatus.BAD_REQUEST,
+      success: false,
+      message: stoppageImages.error,
+      data: null,
+    });
+  }
+
   // image with tripServiceData
   const finalTripServiceData = {
     ...tripServiceData,
     images: imageUrls.length > 0 ? imageUrls : [],
+    ...(stoppageImages.stoppages
+      ? { stoppages: stoppageImages.stoppages }
+      : {}),
   };
 
   const result = await TripServiceService.createDayTripService(
@@ -644,9 +727,25 @@ const updateTripService = catchAsync(async (req: Request, res: Response) => {
       .map((result) => result.secure_url);
   }
 
+  const stoppageImages = await resolveStoppageImages(
+    updateData.stoppages,
+    files?.stoppageImage,
+  );
+  if ("error" in stoppageImages) {
+    return sendResponse(res, {
+      statusCode: httpStatus.BAD_REQUEST,
+      success: false,
+      message: stoppageImages.error,
+      data: null,
+    });
+  }
+
   const finalUpdateData = {
     ...updateData,
     ...(imageUrls.length > 0 && { images: imageUrls }),
+    ...(stoppageImages.stoppages
+      ? { stoppages: stoppageImages.stoppages }
+      : {}),
   };
 
   const result = await TripServiceService.updateTripService(

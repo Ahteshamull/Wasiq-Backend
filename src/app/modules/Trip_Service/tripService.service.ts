@@ -10,7 +10,7 @@ import { memoryCache } from "../../../shared/utils/cache";
 
 const mapTripService = (trip: any) => {
   if (!trip) return null;
-  const { tripServiceVehicles, ...rest } = trip;
+  const { tripServiceVehicles, dayTripStoppages, ...rest } = trip;
   const vehicles = (tripServiceVehicles || []).map((tsv: any) => {
     if (!tsv.vehicle) return null;
     return {
@@ -22,6 +22,18 @@ const mapTripService = (trip: any) => {
   return {
     ...rest,
     vehicles,
+    ...(Array.isArray(dayTripStoppages) && {
+      stoppages: dayTripStoppages.map((stoppage: any) => ({
+        id: stoppage.id,
+        title: stoppage.title,
+        description: stoppage.description,
+        images: Array.isArray(stoppage.images)
+          ? stoppage.images
+          : stoppage.image
+            ? [stoppage.image]
+            : [],
+      })),
+    }),
   };
 };
 
@@ -89,6 +101,7 @@ const createTripService = async (
         },
       },
       tripServiceVehicles: { include: { vehicle: true } },
+      dayTripStoppages: { orderBy: { order: "asc" } },
     },
   });
 
@@ -165,6 +178,7 @@ const getAllTripServices = async (
         },
       },
       tripServiceVehicles: { include: { vehicle: true } },
+      dayTripStoppages: { orderBy: { order: "asc" } },
     },
     skip,
     take: limit,
@@ -224,6 +238,7 @@ const getByTheHourTripServices = async (
         },
       },
       tripServiceVehicles: { include: { vehicle: true } },
+      dayTripStoppages: { orderBy: { order: "asc" } },
     },
   });
 
@@ -276,6 +291,7 @@ const getByTheHourPopularTripServices = async (
         },
       },
       tripServiceVehicles: { include: { vehicle: true } },
+      dayTripStoppages: { orderBy: { order: "asc" } },
     },
   });
 
@@ -333,6 +349,7 @@ const createExploreService = async (
         },
       },
       tripServiceVehicles: { include: { vehicle: true } },
+      dayTripStoppages: { orderBy: { order: "asc" } },
     },
   });
 
@@ -376,6 +393,7 @@ const getExploreService = async (
         },
       },
       tripServiceVehicles: { include: { vehicle: true } },
+      dayTripStoppages: { orderBy: { order: "asc" } },
     },
   });
 
@@ -406,7 +424,7 @@ const createDayTripService = async (
     throw new ApiError(httpStatus.NOT_FOUND, "User not found");
   }
 
-  const { vehicles, ...restPayload } = payload;
+  const { vehicles, stoppages, ...restPayload } = payload;
   let vehiclesData: Prisma.TripServiceVehicleCreateWithoutTripServiceInput[] = [];
 
   if (vehicles && vehicles.length > 0) {
@@ -442,6 +460,17 @@ const createDayTripService = async (
       ...(vehiclesData.length > 0 && {
         tripServiceVehicles: { create: vehiclesData, },
       }),
+      ...(stoppages &&
+        stoppages.length > 0 && {
+          dayTripStoppages: {
+            create: stoppages.map((stoppage, index) => ({
+              title: stoppage.title,
+              description: stoppage.description,
+              images: stoppage.images,
+              order: index,
+            })),
+          },
+        }),
     },
     include: {
       user: {
@@ -452,11 +481,12 @@ const createDayTripService = async (
         },
       },
       tripServiceVehicles: { include: { vehicle: true } },
+      dayTripStoppages: { orderBy: { order: "asc" } },
     },
   });
 
   memoryCache.clearPattern("trip_services:");
-  return result;
+  return mapTripService(result);
 };
 
 // get all trip services DAY_TRIP
@@ -490,6 +520,7 @@ const getDayTripTripServices = async (
         },
       },
       tripServiceVehicles: { include: { vehicle: true } },
+      dayTripStoppages: { orderBy: { order: "asc" } },
     },
   });
 
@@ -542,6 +573,7 @@ const getDayTripPopularTripServices = async (
         },
       },
       tripServiceVehicles: { include: { vehicle: true } },
+      dayTripStoppages: { orderBy: { order: "asc" } },
     },
   });
 
@@ -593,6 +625,7 @@ const getDayTripTripServicesByFromLocationGroup = async (
         },
       },
       tripServiceVehicles: { include: { vehicle: true } },
+      dayTripStoppages: { orderBy: { order: "asc" } },
     },
   });
 
@@ -671,6 +704,7 @@ const createMultiDayTourTripService = async (
       createdAt: true,
       updatedAt: true,
       tripServiceVehicles: { include: { vehicle: true } },
+      dayTripStoppages: { orderBy: { order: "asc" } },
       user: {
         select: {
           id: true,
@@ -716,6 +750,7 @@ const getMultiDayTourTripServices = async (
         },
       },
       tripServiceVehicles: { include: { vehicle: true } },
+      dayTripStoppages: { orderBy: { order: "asc" } },
     },
   });
 
@@ -768,6 +803,7 @@ const getMultiDayTourPopularTripServices = async (
         },
       },
       tripServiceVehicles: { include: { vehicle: true } },
+      dayTripStoppages: { orderBy: { order: "asc" } },
     },
   });
 
@@ -835,6 +871,7 @@ const getMultiDayTourTripServicesByTourDaysGroup = async (
       createdAt: true,
       updatedAt: true,
       tripServiceVehicles: { include: { vehicle: true } },
+      dayTripStoppages: { orderBy: { order: "asc" } },
       user: {
         select: {
           id: true,
@@ -916,6 +953,7 @@ const getPrivateTransferTripServices = async (
         },
       },
       tripServiceVehicles: { include: { vehicle: true } },
+      dayTripStoppages: { orderBy: { order: "asc" } },
     },
   });
 
@@ -1027,6 +1065,7 @@ const getPrivateTransferPopularTripServices = async (
         },
       },
       tripServiceVehicles: { include: { vehicle: true } },
+      dayTripStoppages: { orderBy: { order: "asc" } },
     },
   });
 
@@ -1078,6 +1117,7 @@ const getPrivateTransferTripServicesByFromLocationGroup = async (
         },
       },
       tripServiceVehicles: { include: { vehicle: true } },
+      dayTripStoppages: { orderBy: { order: "asc" } },
     },
   });
 
@@ -1144,6 +1184,7 @@ const getAirportTransferTripServices = async (
         },
       },
       tripServiceVehicles: { include: { vehicle: true } },
+      dayTripStoppages: { orderBy: { order: "asc" } },
     },
   });
 
@@ -1196,6 +1237,7 @@ const getAirportTransferPopularTripServices = async (
         },
       },
       tripServiceVehicles: { include: { vehicle: true } },
+      dayTripStoppages: { orderBy: { order: "asc" } },
     },
   });
 
@@ -1247,6 +1289,7 @@ const getAirportTransferTripServicesByFromLocationGroup = async (
         },
       },
       tripServiceVehicles: { include: { vehicle: true } },
+      dayTripStoppages: { orderBy: { order: "asc" } },
     },
   });
 
@@ -1313,6 +1356,7 @@ const getTransferTripServices = async (
         },
       },
       tripServiceVehicles: { include: { vehicle: true } },
+      dayTripStoppages: { orderBy: { order: "asc" } },
     },
   });
 
@@ -1365,6 +1409,7 @@ const getTransferPopularTripServices = async (
         },
       },
       tripServiceVehicles: { include: { vehicle: true } },
+      dayTripStoppages: { orderBy: { order: "asc" } },
     },
   });
 
@@ -1395,6 +1440,7 @@ const getSingleTripService = async (id: string): Promise<any> => {
         },
       },
       tripServiceVehicles: { include: { vehicle: true } },
+      dayTripStoppages: { orderBy: { order: "asc" } },
     },
   });
 
@@ -1422,7 +1468,7 @@ const updateTripService = async (
     );
   }
 
-  const { vehicles, userId, ...restPayload } = payload;
+  const { vehicles, stoppages, userId, ...restPayload } = payload;
   let vehiclesData: Prisma.TripServiceVehicleCreateWithoutTripServiceInput[] = [];
 
   if (vehicles && vehicles.length > 0) {
@@ -1456,7 +1502,20 @@ const updateTripService = async (
       ...restPayload,
       ...(vehicles ? {
         tripServiceVehicles: { deleteMany: {}, create: vehiclesData }
-      } : {})
+      } : {}),
+      ...(stoppages
+        ? {
+            dayTripStoppages: {
+              deleteMany: {},
+              create: stoppages.map((stoppage, index) => ({
+                title: stoppage.title,
+                description: stoppage.description,
+                images: stoppage.images,
+                order: index,
+              })),
+            },
+          }
+        : {}),
     },
     include: {
       user: {
@@ -1467,11 +1526,12 @@ const updateTripService = async (
         },
       },
       tripServiceVehicles: { include: { vehicle: true } },
+      dayTripStoppages: { orderBy: { order: "asc" } },
     },
   });
 
   memoryCache.clearPattern("trip_services:");
-  return result;
+  return mapTripService(result);
 };
 
 // delete trip service
@@ -1499,6 +1559,7 @@ const deleteTripService = async (id: string): Promise<TripService> => {
         },
       },
       tripServiceVehicles: { include: { vehicle: true } },
+      dayTripStoppages: { orderBy: { order: "asc" } },
     },
   });
 
@@ -1557,6 +1618,7 @@ const getTripsByLocationForModal = async (
       includedContent: true,
       excludedContent: true,
       tripServiceVehicles: { include: { vehicle: true } },
+      dayTripStoppages: { orderBy: { order: "asc" } },
     },
   });
 
@@ -1603,6 +1665,7 @@ const getTripServicesByFromLocation = async (
         },
       },
       tripServiceVehicles: { include: { vehicle: true } },
+      dayTripStoppages: { orderBy: { order: "asc" } },
     },
   });
 

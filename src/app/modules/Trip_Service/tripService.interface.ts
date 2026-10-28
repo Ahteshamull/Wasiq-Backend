@@ -13,6 +13,7 @@ export type ITripService = Omit<
   includedContent?: string[];
   excludedContent?: string[];
   vehicles?: { vehicleId: string; price: number }[];
+  stoppages?: { title: string; description: string; images: string[] }[];
   createdAt?: Date;
   updatedAt?: Date;
 };

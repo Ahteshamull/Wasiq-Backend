@@ -54,7 +54,10 @@ router.get(
 router.post(
   "/day-trip",
   auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
-  uploadFile.upload.fields([{ name: "image", maxCount: 10 }]),
+  uploadFile.upload.fields([
+    { name: "image", maxCount: 10 },
+    { name: "stoppageImage", maxCount: 40 },
+  ]),
   parseBodyData,
   validateRequest(TripServiceValidation.createDayTripServiceValidationSchema),
   TripServiceController.createDayTripService,
@@ -161,7 +164,10 @@ router.get("/:id", TripServiceController.getSingleTripService);
 router.patch(
   "/:id",
   auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
-  uploadFile.upload.fields([{ name: "image", maxCount: 10 }]),
+  uploadFile.upload.fields([
+    { name: "image", maxCount: 10 },
+    { name: "stoppageImage", maxCount: 40 },
+  ]),
   parseBodyData,
   validateRequest(TripServiceValidation.updateTripServiceValidationSchema),
   TripServiceController.updateTripService,
