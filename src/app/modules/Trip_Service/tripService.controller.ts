@@ -158,7 +158,14 @@ const resolveStoppageImages = async (
       }[]
     | undefined,
   files?: Express.Multer.File[],
-) => {
+): Promise<
+  | { error: string }
+  | {
+      stoppages:
+        | { title: string; description: string; images: string[] }[]
+        | undefined;
+    }
+> => {
   if (!Array.isArray(stoppages)) {
     return { stoppages: undefined };
   }
