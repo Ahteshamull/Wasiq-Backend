@@ -1,5 +1,24 @@
 import { z } from "zod";
 
+const optionalSectionDescription = z
+  .string()
+  .trim()
+  .min(1, "Description cannot be empty");
+
+const dayTripFaqSchema = z.object({
+  question: z.string().trim().min(1, "FAQ question is required"),
+  answer: z.string().trim().min(1, "FAQ answer is required"),
+});
+
+const whatToExpectSchema = z
+  .object({
+    beginsWhereverYouAre: optionalSectionDescription.optional(),
+    localExpertise: optionalSectionDescription.optional(),
+    ownPace: optionalSectionDescription.optional(),
+    privateGroup: optionalSectionDescription.optional(),
+  })
+  .optional();
+
 const dayTripStoppageSchema = z.object({
   title: z.string().min(1, "Stoppage title is required"),
   description: z.string().min(1, "Stoppage description is required"),
@@ -174,6 +193,10 @@ const createDayTripServiceValidationSchema = z.object({
       .max(300, "Short description must be at most 300 characters")
       .optional(),
     stoppages: z.array(dayTripStoppageSchema).optional(),
+    scenicStopsDescription: optionalSectionDescription.optional(),
+    arrivingInDescription: optionalSectionDescription.optional(),
+    faqs: z.array(dayTripFaqSchema).optional(),
+    whatToExpect: whatToExpectSchema,
     serviceType: z
       .enum([
         "BY_THE_HOUR",
@@ -405,6 +428,10 @@ const updateTripServiceValidationSchema = z.object({
       .max(300, "Short description must be at most 300 characters")
       .optional(),
     stoppages: z.array(dayTripStoppageSchema).optional(),
+    scenicStopsDescription: optionalSectionDescription.optional(),
+    arrivingInDescription: optionalSectionDescription.optional(),
+    faqs: z.array(dayTripFaqSchema).optional(),
+    whatToExpect: whatToExpectSchema,
     serviceType: z
       .enum([
         "BY_THE_HOUR",

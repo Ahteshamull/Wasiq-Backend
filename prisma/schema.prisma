@@ -180,6 +180,10 @@ model TripService {
   images            String[]
   description       String
   shortDescription  String?
+  scenicStopsDescription String?
+  arrivingInDescription  String?
+  faqs                   Json?
+  whatToExpect           Json?
   serviceType       ServiceType
   routeType         String?
   tourDays          Int?

@@ -8,9 +8,36 @@ import { IPaginationOptions } from "../../../interfaces/paginations";
 import { IGenericResponse } from "../../../interfaces/common";
 import { memoryCache } from "../../../shared/utils/cache";
 
+const WHAT_TO_EXPECT_CATEGORIES = [
+  {
+    key: "beginsWhereverYouAre",
+    title: "Your day-trip begins wherever you are",
+  },
+  {
+    key: "localExpertise",
+    title: "Discover more with local expertise",
+  },
+  {
+    key: "ownPace",
+    title: "Explore at your own pace",
+  },
+  {
+    key: "privateGroup",
+    title: "Perfect for any private group",
+  },
+] as const;
+
 const mapTripService = (trip: any) => {
   if (!trip) return null;
-  const { tripServiceVehicles, dayTripStoppages, ...rest } = trip;
+  const {
+    tripServiceVehicles,
+    dayTripStoppages,
+    scenicStopsDescription,
+    arrivingInDescription,
+    faqs,
+    whatToExpect,
+    ...rest
+  } = trip;
   const vehicles = (tripServiceVehicles || []).map((tsv: any) => {
     if (!tsv.vehicle) return null;
     return {
@@ -19,6 +46,9 @@ const mapTripService = (trip: any) => {
       basePrice: tsv.price,
     };
   }).filter(Boolean);
+  const expectations =
+    whatToExpect && typeof whatToExpect === "object" ? whatToExpect : {};
+
   return {
     ...rest,
     vehicles,
@@ -33,6 +63,25 @@ const mapTripService = (trip: any) => {
             ? [stoppage.image]
             : [],
       })),
+    }),
+    ...(trip.serviceType === ServiceType.DAY_TRIP && {
+      scenicStops: {
+        title: "Scenic Stops along the way",
+        description: scenicStopsDescription ?? null,
+      },
+      arrivingIn: {
+        title: "Arriving in",
+        description: arrivingInDescription ?? null,
+      },
+      faqs: Array.isArray(faqs) ? faqs : [],
+      whatToExpect: {
+        title: "What to expect",
+        categories: WHAT_TO_EXPECT_CATEGORIES.map((category) => ({
+          key: category.key,
+          title: category.title,
+          description: expectations[category.key] ?? null,
+        })),
+      },
     }),
   };
 };
@@ -1606,6 +1655,10 @@ const getTripsByLocationForModal = async (
       title: true,
       description: true,
       shortDescription: true,
+      scenicStopsDescription: true,
+      arrivingInDescription: true,
+      faqs: true,
+      whatToExpect: true,
       travelTimeMinutes: true,
       tourDays: true,
       price: true,
