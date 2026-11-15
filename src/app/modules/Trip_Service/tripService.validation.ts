@@ -148,6 +148,7 @@ const createTripServiceValidationSchema = z.object({
 // create day trip service validation schema
 const createDayTripServiceValidationSchema = z.object({
   body: z.object({
+    title: z.string().min(1, "Title is required"),
     from: z.string().min(1, "From location is required"),
     fromLat: z
       .string()
